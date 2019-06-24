@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bce38bc8f61579041b751c97bf0ac3f0, type: 3}
+  m_Name: Default_Health
+  m_EditorClassIdentifier: 
+  ID: 0
+  _enabled: 1
+  _statName: Health
+  _category: Default
+  _showInUI: 1
+  _uiPrefab: {fileID: 11438680, guid: daab7375d65094f419fbf9574c539450, type: 2}
+  _valueStringFormat: '{0} {2}'
+  _color: {r: 0.9056604, g: 0, b: 0.26659465, a: 1}
+  _icon: {fileID: 0}
+  _baseValue: 100
+  _maxValue: 100
+  _startLevel: 0
+  _autoProgressLevels: 1
+  _levels:
+  - maxValue: 132.25806
+    experienceRequired: 0
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 164.51613
+    experienceRequired: 4162.3306
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 196.7742
+    experienceRequired: 9365.244
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 229.03226
+    experienceRequired: 16649.322
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 261.2903
+    experienceRequired: 26014.566
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 293.5484
+    experienceRequired: 37460.977
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 325.80646
+    experienceRequired: 50988.55
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 358.0645
+    experienceRequired: 66597.29
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 390.32257
+    experienceRequired: 84287.195
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 422.58063
+    experienceRequired: 104058.266
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 454.8387
+    experienceRequired: 125910.5
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 487.09677
+    experienceRequired: 149843.9
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 519.35486
+    experienceRequired: 175858.47
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 551.6129
+    experienceRequired: 203954.2
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 583.871
+    experienceRequired: 234131.1
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 616.129
+    experienceRequired: 266389.16
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 648.3871
+    experienceRequired: 300728.44
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 680.64514
+    experienceRequired: 337148.78
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 712.9032
+    experienceRequired: 375650.38
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 745.16125
+    experienceRequired: 416233.06
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 777.4194
+    experienceRequired: 458897
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 809.6774
+    experienceRequired: 503642
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 841.9355
+    experienceRequired: 550468.25
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 874.19354
+    experienceRequired: 599375.6
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 906.4516
+    experienceRequired: 650364.2
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 938.70966
+    experienceRequired: 703433.9
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 970.9677
+    experienceRequired: 758584.8
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 1003.2258
+    experienceRequired: 815816.8
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 1035.4839
+    experienceRequired: 875130.06
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 1067.742
+    experienceRequired: 936524.4
+    effectOnUnlock: {fileID: 0}
+  - maxValue: 1100
+    experienceRequired: 1000000
+    effectOnUnlock: {fileID: 0}
