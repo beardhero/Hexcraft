@@ -189,7 +189,7 @@ public class WorldManager : MonoBehaviour
     }
 
     worldRenderer = GetComponent<WorldRenderer>();
-    //changed this to run TriPlates instead of HexPlates
+    //render plates
     foreach (GameObject g in worldRenderer.HexPlates(activeWorld, regularTileSet))
     {
       g.transform.parent = currentWorldTrans;
@@ -226,14 +226,15 @@ public class WorldManager : MonoBehaviour
     //place bedrock layer of blocks
     foreach (HexTile ht in activeWorld.tiles)
     {
-        bM.PlaceBlock(ht, ht.hexagon.center.magnitude + 1, true);
+        bM.CreateBlock(ht, TileType.Earth, ht.hexagon.center.magnitude + 1, ht.hexagon.center.magnitude, true);
     }
-
+    bM.BlockPlates(activeWorld, regularTileSet);
     return activeWorld;
   }
 
   void Update()
   {
+    /*
     if(Input.GetKeyDown(KeyCode.G))
     {
       int[] s = CalculateGenerationalJoeLife(activeWorld.tiles, 1);
@@ -247,7 +248,7 @@ public class WorldManager : MonoBehaviour
     if(Input.GetKeyDown(KeyCode.T))
     {
       track = !track;
-    }
+    }*/
     /*cyclical hex life
 		if(Input.GetKeyDown(KeyCode.Return))
 		{
@@ -271,7 +272,7 @@ public class WorldManager : MonoBehaviour
       //RandomWorldState();
       fB = 0;
     }*/
-
+    /*
     if(Input.GetKeyDown(KeyCode.M))
     {
       byte[] id = new byte[32];
@@ -289,7 +290,7 @@ public class WorldManager : MonoBehaviour
       if(randomAnt){sequence = RandomAnt();}
         GameObject ant = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         StartCoroutine(LangstonsHex0(sequence, ant));
-    }
+    }*/
     /*
     if (Input.GetKeyDown(KeyCode.Mouse0))
     {

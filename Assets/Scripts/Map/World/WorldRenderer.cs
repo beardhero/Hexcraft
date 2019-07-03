@@ -59,31 +59,31 @@ public class WorldRenderer : MonoBehaviour
     //Switch between UV Modes
     if (hexagonal) //Hexagonal uvs
     {
-      //Copypasta from worldrenderer
-      float texHeight = 8192f;//tileSet.texture.height;
-      float texWidth = 8192f;//tileSet.texture.width;
-      //float root3 = Mathf.Sqrt(3);
-			uvTileWidth = 1.0f / 42.0f; //tileSet.tileWidth / texWidth;
-			uvTileHeight = 1.0f / 42.0f; //tileSet.tileHeight / texHeight;
-      //float side = uvTileWidth / 2.0f;
-     // float radius = Mathf.Sqrt((3.0f * side * side) / 4.0f);
-	  /*
-      Vector2 uv0 = new Vector2(side, side),
-              uv1 = new Vector2(side, side + side),
-              uv2 = new Vector2(side + radius, side + side / 2.0f),
-              uv3 = new Vector2(side + radius, side / 2.0f),
-              uv4 = new Vector2(side, 0),
-              uv5 = new Vector2(side - radius, side / 2.0f),
-              uv6 = new Vector2(side - radius, side + side / 2.0f);
-		*/
-			uv0 = new Vector2 (uvTileWidth/2.0f, uvTileHeight / 2.0f);
-			uv1 = new Vector2 (10/texWidth, 98/texHeight);
-			uv2 = new Vector2 (54/texWidth, 22/texHeight);
-			uv3 = new Vector2 (141/texWidth, 22/texHeight);
-			uv4 = new Vector2 (185/texWidth, 98/texHeight);
-			uv5 = new Vector2 (141/texWidth, 173/texHeight);
-			uv6 = new Vector2 (54/texWidth, 173/texHeight);
+            //Copypasta from worldrenderer
+            float texHeight = 8192f;// 7568f;//tileSet.texture.height;
+            float texWidth = 8192f;//tileSet.texture.width;
+                             //float root3 = Mathf.Sqrt(3);
+            uvTileWidth = 1.0f / 16;// 42.0f; //tileSet.tileWidth / texWidth;
+            uvTileHeight = 1.0f / 16;// 42.0f; //tileSet.tileHeight / texHeight;
 
+            /*                       //float side = uvTileWidth / 2.0f;
+            uv0 = new Vector2(uvTileWidth / 2.0f, uvTileHeight / 2.0f);
+            uv1 = new Vector2(10 / texWidth, 98 / texHeight);
+            uv2 = new Vector2(54 / texWidth, 22 / texHeight);
+            uv3 = new Vector2(141 / texWidth, 22 / texHeight);
+            uv4 = new Vector2(185 / texWidth, 98 / texHeight);
+            uv5 = new Vector2(141 / texWidth, 173 / texHeight);
+            uv6 = new Vector2(54 / texWidth, 173 / texHeight);
+            */
+
+            uv0 = new Vector2(256f/texWidth, 221.5f/texHeight);//(uvTileWidth/2.0f, uvTileHeight / 2.0f);
+			uv1 = new Vector2 (0f/texWidth, 221.5f/texHeight);
+			uv2 = new Vector2 (128f/texWidth, 443f/texHeight);
+			uv3 = new Vector2 (384f/texWidth, 443f/texHeight);
+			uv4 = new Vector2 (512f/texWidth, 221.5f/texHeight);
+			uv5 = new Vector2 (384f/texWidth, 0/texHeight);
+			uv6 = new Vector2 (128f/texWidth, 0/texHeight);
+            
             //Debug.Log (uv0.x + " " + uv0.y);
             //Debug.Log(uv1.x + " " + uv1.y);
             //Debug.Log(uv2.x + " " + uv2.y);

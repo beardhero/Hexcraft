@@ -28,7 +28,7 @@ public class TileSet
 
     initialized = true;
   }
-
+    
   public IntCoord GetSideUVForType(TileType t)
   {
     if (!initialized)
@@ -49,8 +49,8 @@ public class TileSet
       return IntCoord.Zero();
 
     IntCoord coord = new IntCoord();
-    coord.x = UnityEngine.Random.Range(_typeUVs[(int)t].minCoord.x, _typeUVs[(int)t].maxCoord.x);
-    coord.y = UnityEngine.Random.Range(_typeUVs[(int)t].minCoord.y, _typeUVs[(int)t].maxCoord.y);
+    coord.x = UnityEngine.Random.Range(_typeUVs[(int)t].minCoord.x, _typeUVs[(int)t].maxCoord.x + 1);
+    coord.y = UnityEngine.Random.Range(_typeUVs[(int)t].minCoord.y, _typeUVs[(int)t].maxCoord.y + 1);
     //return _typeUVs[(int)t].coord;
     return coord;
   }

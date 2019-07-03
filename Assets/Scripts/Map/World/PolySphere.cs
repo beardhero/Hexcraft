@@ -26,7 +26,7 @@ public class PolySphere
   public List<List<SphereTile>> tPlates;
   public List<Plate> plates;
   public int numberOfPlates;
-  public int maxTilesPerPlate = 256;
+  public int maxTilesPerPlate = 18;
   public float initialHeight;
   public float oceanProb = 0.6f; //redacted
   
