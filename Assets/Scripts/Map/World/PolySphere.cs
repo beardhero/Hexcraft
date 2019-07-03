@@ -50,7 +50,7 @@ public class PolySphere
     //AvgHeight();
     //CorrectSunkenTiles();
     TectonicPlates(); //Populates plates and creates stress forces between them.
-    //RandomPlateAttunement();
+    RandomPlateAttunement();
 	  
     //CacheTris();
     CacheHexes(); //Converts to HexTiles for serialization
@@ -63,17 +63,22 @@ public class PolySphere
   void RandomPlateAttunement()
   {
     TileType t;
-    TileType[] tta = new TileType[6] {
-				TileType.Luna,
-				TileType.Sol,
+    TileType[] tta = new TileType[12] {
+				TileType.Dark,
+				TileType.Light,
 				TileType.Water,
 				TileType.Air,
 				TileType.Earth,
 				TileType.Fire,
-			};
+                TileType.Arbor,
+                TileType.Astral,
+                TileType.Crystal,
+                TileType.Ice,
+                TileType.Metal,
+                TileType.Vapor      };
     foreach(Plate p in plates)
     {
-      t = tta[Random.Range(0,5)];
+      t = tta[Random.Range(0,12)];
       foreach(SphereTile st in p.tiles)
       {
         st.type = t;
@@ -325,12 +330,14 @@ public class PolySphere
     }
     //Fill in neighbors, fill in neighbors of neighbors, repeat until filled
     FloodFill();
+    
     //Debug.Log(plates.Count);
     //Make the plates!
     BuildPlates();
-    //Create stress forces between plates
-    //Tectonics();
-  }
+        //RandomPlateAttunement();
+        //Create stress forces between plates
+        //Tectonics();
+    }
     //@TODO
   void Tectonics()//List<SphereTile> setting)
   {

@@ -106,7 +106,7 @@ public class WorldManager : MonoBehaviour
       {
         seed[i] = (byte)UnityEngine.Random.Range(0,256);
       }
-      activeWorld.Populate(seed);
+      //activeWorld.Populate(seed);
 
       //place objects in biomes
       Object[] airBiome = Resources.LoadAll("Air/");
@@ -195,15 +195,15 @@ public class WorldManager : MonoBehaviour
       g.transform.parent = currentWorldTrans;
     }
     Debug.Log(activeWorld.tiles.Count);
-     
+     /*
     foreach(HexTile ht in activeWorld.tiles)
     {
       ht.ChangeType(ht.type);
-    }
+    }*/
     
     if(loadWorld)
     {
-       StartCoroutine(SpawnElementals());
+       //StartCoroutine(SpawnElementals());
     }
     /* 
     foreach(HexTile ht in activeWorld.tiles)
@@ -226,7 +226,7 @@ public class WorldManager : MonoBehaviour
     //place bedrock layer of blocks
     foreach (HexTile ht in activeWorld.tiles)
     {
-        bM.CreateBlock(ht, TileType.Earth, ht.hexagon.center.magnitude + 1, ht.hexagon.center.magnitude, true);
+        bM.CreateBlock(ht, ht.type, ht.hexagon.center.magnitude + 1, ht.hexagon.center.magnitude, true);
     }
     bM.BlockPlates(activeWorld, regularTileSet);
     return activeWorld;

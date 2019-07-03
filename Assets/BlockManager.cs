@@ -10,6 +10,7 @@ public class BlockManager : MonoBehaviour
     public static float blockScaleFactor = 0.024f;
     public GameObject blockPrefab;
     public WorldManager worldManager;
+    public TileType toPlace;
     
     //public TileSet tileSet;
     // Start is called before the first frame update
@@ -46,19 +47,18 @@ public class BlockManager : MonoBehaviour
                 {
                     float h = hb.height;
                     float bH = h - (h * blockScaleFactor);
-                    //test
-                    TileType type = TileType.Earth;
+                    
                     if (tri < 6) //top
                     {
                         Debug.Log("Placing Top  " + tri);
-                        CreateBlock(tile, type, h + (h * blockScaleFactor), h, false);
+                        CreateBlock(tile, toPlace, h + (h * blockScaleFactor), h, false);
                         AddToPlate(hitObject, blocks.Count -1);
                         
                     }
                     if (tri >= 6 && tri < 12) //bot
                     {
                         Debug.Log("Placing Bot  " + tri);
-                        CreateBlock(tile, type, bH, bH - (bH * blockScaleFactor), false);
+                        CreateBlock(tile, toPlace, bH, bH - (bH * blockScaleFactor), false);
                         AddToPlate(hitObject, blocks.Count -1);
                     }
                     if (tri >= 12 && tri < 24) //side
@@ -78,7 +78,7 @@ public class BlockManager : MonoBehaviour
                                 check = nextCheck;
                             }
                         }
-                        CreateBlock(n, type, h, bH, false);
+                        CreateBlock(n, toPlace, h, bH, false);
                         AddToPlate(hitObject, blocks.Count - 1);
                     }
                 }

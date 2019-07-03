@@ -329,6 +329,7 @@ public class World
         int t = (v % 12) + 1; //using 12 types
         ht.type = (TileType)t;
       }
+      
       float gP = Random.Range(0f,1.0f);
       if(glyphProb > gP)
       {
@@ -344,7 +345,7 @@ public class World
         newRune.hexTile = ht.index;
         runes.Add(newRune);
       } 
-
+      
       float r = Random.Range(0,1.0f);
       if(r < populationProb && ht.generation == zeroState)// populationProb)// && ht.generation == zeroState)
       {
