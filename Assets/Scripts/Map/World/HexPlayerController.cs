@@ -192,7 +192,7 @@ public class HexPlayerController : MonoBehaviour {
         walkSpeed = mag * walkScaleFactor;
         runSpeed = mag * walkScaleFactor;
         zoomMax = mag * zoomFactor;
-        zoomMin = mag * zoomFactor;
+        //zoomMin = mag * zoomFactor;
         BlockManager.rayrange = mag * rayScaleFactor;
 
     }

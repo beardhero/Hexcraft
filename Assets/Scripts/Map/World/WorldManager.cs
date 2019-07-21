@@ -17,8 +17,8 @@ public class WorldManager : MonoBehaviour
   public GameObject combatManager;
   public TileSet regularTileSet;
   public static TileSet staticTileSet;
-  public float worldScale = 1;
-  public int worldSubdivisions = 1;
+  public static float worldScale = 3;
+  public static int worldSubdivisions = 4;
   public static int uvWidth = 100;
   public static int uvHeight;
   public bool b;

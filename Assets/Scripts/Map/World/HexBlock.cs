@@ -27,13 +27,13 @@ public class HexBlock
         blockHeight = _blockHeight;
         //height = topHeight;
         float h = tile.hexagon.center.magnitude;
-        float f = 1 + BlockManager.blockScaleFactor;
-        height = (h * BlockManager.blockScaleFactor + h) * Mathf.Pow(f, blockHeight);
+        float f = 1 + BlockManager.BlockScaleFactor;
+        height = (h * BlockManager.BlockScaleFactor + h) * Mathf.Pow(f, blockHeight);
         //height = h + (h * BlockManager.blockScaleFactor * (blockHeight + 1));
         float botHeight = h;
         if (blockHeight != 0)
         {
-            botHeight = (h * BlockManager.blockScaleFactor + h) * Mathf.Pow(f, blockHeight - 1);
+            botHeight = (h * BlockManager.BlockScaleFactor + h) * Mathf.Pow(f, blockHeight - 1);
         }
         //float botHeight = h + (h * BlockManager.blockScaleFactor * blockHeight);
         type = tileType;

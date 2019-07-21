@@ -13,7 +13,7 @@ public class BlockManager : MonoBehaviour
     public static int[] heightmap; //top block by hex tile index
     public static float rayrange;
 
-    public static float blockScaleFactor = 0.024f;
+    
     public GameObject blockPrefab;
     public WorldManager worldManager;
     public TileType toPlace;
@@ -24,11 +24,14 @@ public class BlockManager : MonoBehaviour
     float uvTileWidth = 1.0f / 16f;
     float uvTileHeight = 1.0f / 16f;
 
+    private static float _blockScaleFactor = 0.1f;
+    public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
+
     //public TileSet tileSet;
     // Start is called before the first frame update
     void Start()
     {
-        
+        //blockScaleFactor /= WorldManager.worldSubdivisions;
     }
 
     // Update is called once per frame
@@ -42,6 +45,7 @@ public class BlockManager : MonoBehaviour
             ChangeType(blocks[0], blocks[0].type);
             updateTimer = 0;
         }*/
+        //plate update
 
         //placing inputs
         if (Input.GetKeyDown(KeyCode.Mouse0))
@@ -187,6 +191,7 @@ public class BlockManager : MonoBehaviour
         if (worldManager == null)
         {
             worldManager = GameObject.FindWithTag("World Manager").GetComponent<WorldManager>();
+            
         }
         if (plates == null)
         {
