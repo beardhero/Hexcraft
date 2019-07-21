@@ -188,7 +188,7 @@ public class SphereTile
     {
       neig.Add(st.index);
     }
-    return new HexTile(hex, plate, neig, boundary, height, type);
+    return new HexTile(hex, plate, neig, boundary, height, type, plateOrigin);
   }
 }
 

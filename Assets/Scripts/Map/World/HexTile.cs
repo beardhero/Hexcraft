@@ -16,6 +16,7 @@ public class HexTile
   public TileType typeToSet;
   public int objectToPlace = -1;
   public List<int> neighbors;
+  public bool plateOrigin;
   public bool boundary;
   public bool passable = true;
   public bool oceanTile = false;
@@ -24,6 +25,7 @@ public class HexTile
   public bool placeObject;
   public int antPasses = 0;
   public int state;
+    /*
 	//Each tile has it's own rule set, rule changes turn these bools on and off accordingly
 	public bool os1, os2, os3, os4, os5, os6, ob1, ob2, ob3, ob4, ob5, ob6,
 	ws1, ws2, ws3, ws4, ws5, ws6, wb1, wb2, wb3, wb4, wb5, wb6,
@@ -210,7 +212,7 @@ public class HexTile
 			nb5 = true;
 		if (b [83])
 			nb6 = true;
-	}
+	} */
 
   //Tectonics
   public float pressure, shear, scale, temp, humidity;
@@ -242,7 +244,7 @@ public class HexTile
     index = h.index;
     hexagon = h;
   }
-  public HexTile(Hexagon h, int p, List<int> neighbs, bool b, float hi, TileType t)
+  public HexTile(Hexagon h, int p, List<int> neighbs, bool b, float hi, TileType t, bool origin)
   {
     type = t;
     index = h.index;
@@ -251,6 +253,7 @@ public class HexTile
     boundary = b;
     neighbors = new List<int>(neighbs);
     height = hi;
+    plateOrigin = origin;
   }
   public void ChangeType(TileType t)
   {
@@ -352,8 +355,8 @@ public class HexTile
 		}
 		return opp;
 	}
-
-	public void HexLifeShift(HexTile[] neighbs)
+    
+	/*public void HexLifeShift(HexTile[] neighbs)
 	{
 		//count neighbors
 		int[] ec = new int[7];
@@ -392,7 +395,7 @@ public class HexTile
 				generation++;
 			}
 		}
-		*/
+		* 
 		//if solar	
 		if ((ec [1] + ec [3] + ec [5]) < (ec [2] + ec [4] + ec [6])) {
 			if(ec[2] > ec[4] && ec[2] > ec[6]){
@@ -467,9 +470,9 @@ public class HexTile
 				x = i;
 			}
 			ttset = types [x];
-		}
-		*/
-
+		} 
+		*
+        
 		if (tset == this.type) {
 			if (!flip) {
 				generation++;
@@ -487,7 +490,7 @@ public class HexTile
 			generation = 0;
 		}
 		this.ChangeType (tset);
-	}
+	} */
 
 
   public int GetNeighborID(int dir)

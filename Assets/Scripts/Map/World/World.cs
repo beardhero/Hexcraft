@@ -37,7 +37,7 @@ public class World
   [HideInInspector] public List<Rune> runes;
   //[HideInInspector] public List<Plate> plates;
   [HideInInspector] public Dictionary<int, int> tileToPlate; //key hextile.index, value plate index
-
+  
   private bool neighborInit;
   private List<List<HexTile>> _neighbors;
   public List<List<HexTile>> neighbors{
@@ -114,7 +114,6 @@ public class World
     {
       ht.generation = zeroState;
     }
-
     sc = 99; //Random.Range(99f,111f);
     f = 0.0000024; //(double)Random.Range(.0000014618f,.000001918f); //(double)Random.Range(0.000000618f,0.000000918f);//.01618;// * Random.Range(0.5f,1.5f);// * i; //.0000024
     l = 2.4; //(double)Random.Range(2.24f,4.42f);// * Random.Range(0.5f,1.5f);//2.4;
@@ -126,8 +125,8 @@ public class World
     {
       UnityEngine.Random.InitState(seed[i]);
       perlin.Seed = seed[i];
-    
-      float stepHeight = Random.Range(0.1f,0.5f);
+
+      float stepHeight = Random.Range(0, 0);// 0.1f,0.5f);
       PerlinPopulate(perlin,f,l,p,o,amplitude,sc,stepHeight);
     }
     

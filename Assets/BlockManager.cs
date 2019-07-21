@@ -1,64 +1,101 @@
-﻿using System.Collections;
+﻿using LibNoise.Unity.Generator;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 public class BlockManager : MonoBehaviour
 {
     public static List<HexBlock> blocks;
     public static List<GameObject> plates;
+    public static List<Mesh> plateMeshes;
+    public static List<BlockInfo> plateInfos;
+    public static Dictionary<int, int[]> blocksOnTile; //hex tile index to block index array, ascending order
+    public static int[] heightmap; //top block by hex tile index
+    public static float rayrange;
+
     public static float blockScaleFactor = 0.024f;
     public GameObject blockPrefab;
     public WorldManager worldManager;
     public TileType toPlace;
-    
+    public static int maxBlocks = 4608;
+    public static int maxHeight = 256;
+    public float updateStep = 1;
+    public float updateTimer = 0;
+    float uvTileWidth = 1.0f / 16f;
+    float uvTileHeight = 1.0f / 16f;
+
     //public TileSet tileSet;
     // Start is called before the first frame update
     void Start()
     {
-        //blocks = new List<HexBlock>();
-        //worldManager = GameObject.FindWithTag("World Manager").GetComponent<WorldManager>();
-        //tileSet = worldManager.regularTileSet;
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        /*
+        updateTimer += Time.deltaTime;
+        //texture animation
+        if (updateTimer >= updateStep)
+        {
+            ChangeType(blocks[0], blocks[0].type);
+            updateTimer = 0;
+        }*/
+
+        //placing inputs
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
-            if (Physics.Raycast(ray, out hit, 100.0f))
+            Debug.Log("ray range " + rayrange);
+            if (Physics.Raycast(ray, out hit, rayrange))
             {
                 GameObject hitObject = hit.transform.gameObject;
                 BlockInfo info = hitObject.GetComponent<BlockInfo>();
-                //Find block we hit
-                int tri = hit.triangleIndex;// % 24;
-                int blockIndex = tri / 24;
-                
-                HexBlock hb = blocks[info.blockIndexes[blockIndex]];
-                Debug.Log(info.blockIndexes[blockIndex]);
-                HexTile tile = WorldManager.activeWorld.tiles[hb.tileIndex];
-                tri = tri % 24;
-
-                Debug.Log(tri);
+                //Debug.Log(tri);
                 if (info != null)
                 {
-                    float h = hb.height;
-                    float bH = h - (h * blockScaleFactor);
+                    //Find block we hit
+                    int tri = hit.triangleIndex;// % 24;
+                    int blockIndex = tri / 24;
+
+                    HexBlock hb = blocks[info.blockIndexes[blockIndex]];
+                    //Debug.Log(info.blockIndexes[blockIndex]);
+                    HexTile tile = WorldManager.activeWorld.tiles[hb.tileIndex];
+                    tri = tri % 24;
+
+                    if (info.blockIndexes.Count >= maxBlocks)
+                    {
+                        Debug.Log("Mana full");
+                        return;
+                    }
+                    //float h = hb.height;
+                    //float bH = h - (h * blockScaleFactor);
                     
                     if (tri < 6) //top
                     {
-                        Debug.Log("Placing Top  " + tri);
-                        CreateBlock(tile, toPlace, h + (h * blockScaleFactor), h, false);
+
+                        //Debug.Log("Placing Top  " + tri);
+                        if (hb.blockHeight + 1 >= maxHeight)
+                        {
+                            Debug.Log("max height exceeded");
+                            return;
+                        }
+                        Debug.Log("placing at height " + hb.blockHeight + 1);
+
+                        CreateBlock(tile, toPlace, hb.blockHeight + 1, false);
                         AddToPlate(hitObject, blocks.Count -1);
-                        
                     }
                     if (tri >= 6 && tri < 12) //bot
                     {
-                        Debug.Log("Placing Bot  " + tri);
-                        CreateBlock(tile, toPlace, bH, bH - (bH * blockScaleFactor), false);
+                        //Debug.Log("Placing Bot  " + tri);
+                        if (hb.blockHeight - 1 < 0)
+                        {
+                            Debug.Log("min height exceeded");
+                            return;
+                        }
+                        CreateBlock(tile, toPlace, hb.blockHeight - 1, false);
                         AddToPlate(hitObject, blocks.Count -1);
                     }
                     if (tri >= 12 && tri < 24) //side
@@ -78,8 +115,8 @@ public class BlockManager : MonoBehaviour
                                 check = nextCheck;
                             }
                         }
-                        CreateBlock(n, toPlace, h, bH, false);
-                        AddToPlate(hitObject, blocks.Count - 1);
+                        CreateBlock(n, toPlace, hb.blockHeight, false);
+                        AddToPlate(plates[n.plate], blocks.Count - 1);
                     }
                 }
             }
@@ -90,7 +127,7 @@ public class BlockManager : MonoBehaviour
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
 
-            if (Physics.Raycast(ray, out hit, 100.0f))
+            if (Physics.Raycast(ray, out hit, rayrange))
             {
                 GameObject hitObject = hit.transform.gameObject;
                 BlockInfo info = hitObject.GetComponent<BlockInfo>();
@@ -101,23 +138,46 @@ public class BlockManager : MonoBehaviour
                 if (info != null)
                 {
                     int blockInWorld = info.blockIndexes[blockInPlate];
-                    //Debug.Log("removing from world " + blockInWorld);
-                    //Debug.Log("removing from plate " + blockInPlate);
-                    Debug.Log("hit tri " + tri);
-                    RemoveFromPlate(hitObject, blockInPlate, blockInWorld);
+                    if (!blocks[blockInWorld].unbreakable)
+                    {
+                        //Debug.Log("removing from world " + blockInWorld);
+                        //Debug.Log("removing from plate " + blockInPlate);
+                        //Debug.Log("hit tri " + tri);
+                        RemoveFromPlate(hitObject, blockInWorld);
+                        //neighbor test
+                        //Debug.Log("block tile index " + blocks[blockInWorld].tileIndex);
+                        /*foreach (int b in WorldManager.activeWorld.tiles[blocks[blockInWorld].tileIndex].neighbors)
+                        {
+                            int nblock = blocksOnTile[b][blocks[blockInWorld].blockHeight];
+
+                            RemoveFromPlate(plates[blocks[nblock].plate], nblock);
+                        }*/
+                    }
                 }//Dstroy(hit.transform.gameObject);}
             }
         }
     }
 
-    public HexBlock CreateBlock(HexTile tile, TileType type, float height, float botHeight, bool isBedrock)
+    public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable)
     {
         if (blocks == null)
         {
             blocks = new List<HexBlock>();
+            //blocks = new HexBlock[42 * WorldManager.worldSubdivisions * WorldManager.activeWorld.tiles.Count];
         }
-        HexBlock toPlace = new HexBlock(tile, type, height, botHeight);//, isBedrock);
-        //GameObject block = RenderBlock(toPlace);
+        if (blocksOnTile == null)
+        {
+            blocksOnTile = new Dictionary<int, int[]>();
+        }
+        if (!blocksOnTile.ContainsKey(tile.index))
+        {
+            blocksOnTile[tile.index] = new int[maxHeight];
+        }
+        HexBlock toPlace = new HexBlock(tile, type, blockHeight, isBreakable);//, isBedrock);
+
+        //add to tile lookup
+        blocksOnTile[tile.index][blockHeight] = blocks.Count;
+
         blocks.Add(toPlace);
         return toPlace;
     }
@@ -128,20 +188,34 @@ public class BlockManager : MonoBehaviour
         {
             worldManager = GameObject.FindWithTag("World Manager").GetComponent<WorldManager>();
         }
+        if (plates == null)
+        {
+            plates = new List<GameObject>();
+        }
+        if (plateInfos == null)
+        {
+            plateInfos = new List<BlockInfo>();
+        }
+        if (plateMeshes == null)
+        {
+            plateMeshes = new List<Mesh>();
+        }
         List<GameObject> output = new List<GameObject>();
         //Create a mesh for each plate and put it in the list of outputs
         //Debug.Log("world.numberofPlates: " + world.numberOfPlates);
         for (int i = 0; i < world.numberOfPlates; i++)
         {
+
             output.Add(RenderBlockPlate(blocks, i));
+           
         }
         plates = output;
+        
         return output;
     }
 
     public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
     {
-        
         GameObject output = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
         
         output.layer = 0;
@@ -154,8 +228,7 @@ public class BlockManager : MonoBehaviour
         List<Vector3> normals = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         //test
-        float uvTileWidth = 1.0f / 16f; //tileSet.tileWidth / texWidth;
-        float uvTileHeight = 1.0f / 16f; //tileSet.tileHeight / texHeight;
+         //tileSet.tileHeight / texHeight;
                                          //TileType type = TileType.Water;
         //int bNum = 0;
         BlockInfo info = output.GetComponent<BlockInfo>();
@@ -166,6 +239,10 @@ public class BlockManager : MonoBehaviour
             HexBlock hb = blocks[i];
             if (hb.plate == p)
             {
+                if (info.plateOrigin == Vector3.zero)
+                {
+                    info.plateOrigin = hb.topCenter;
+                }
                 //bNum++;
                 info.blockIndexes.Add(i);
                 //info.blockCount = bNum;
@@ -397,7 +474,14 @@ public class BlockManager : MonoBehaviour
                 triangles.Add(vertices.Count - 2);
                 triangles.Add(vertices.Count - 1);
             }
+            
         }
+        //Debug.Log("plate " + p + " block count " + info.blockIndexes.Count);
+        //@BUG fix the plate generation, quick fix for this plateOrigin bug
+        /*if (info.plateOrigin == Vector3.zero)
+        {
+            info.plateOrigin = blocks[info.blockIndexes[0]].topCenter;
+        }*/
         ///
         Mesh m = new Mesh();
         m.vertices = vertices.ToArray();
@@ -407,6 +491,9 @@ public class BlockManager : MonoBehaviour
 
         myCollider.sharedMesh = m;
         myFilter.sharedMesh = m;
+
+        plateMeshes.Add(m);
+        plateInfos.Add(info);
 
         return output;
     }
@@ -418,15 +505,17 @@ public class BlockManager : MonoBehaviour
         Mesh m = mf.sharedMesh;
 
         SerializableVector3 origin = WorldManager.activeWorld.origin;
-        float uvTileWidth = 1.0f / 16f;
-        float uvTileHeight = 1.0f / 16f;
-
         List<Vector3> vertices = m.vertices.ToList();
         List<int> triangles = m.triangles.ToList();
         List<Vector3> normals = m.normals.ToList();
         List<Vector2> uvs = m.uv.ToList();
 
         BlockInfo info = plate.GetComponent<BlockInfo>();
+        if (info.blockIndexes.Count >= maxBlocks)
+        {
+            Debug.Log("Mana full");
+            return;
+        }
         info.blockIndexes.Add(blockInd);
         HexBlock hb = blocks[blockInd];
         //info.blockCount++;
@@ -666,13 +755,16 @@ public class BlockManager : MonoBehaviour
         //return output;
     }
 
-    public void RemoveFromPlate(GameObject plate, int blockInPlate, int blockInWorld)
+    public void RemoveFromPlate(GameObject plate, int blockInWorld)
     {
         //HexBlock hb = blocks[block];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
+
         BlockInfo info = plate.GetComponent<BlockInfo>();
+        int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
+        
         List<int> triangles = m.triangles.ToList();
         List<Vector3> vertices = m.vertices.ToList();
         List<Vector3> normals = m.normals.ToList();
@@ -701,20 +793,20 @@ public class BlockManager : MonoBehaviour
                 //Debug.Log("subtracting tri" + i);
                 //Debug.Log("before " + triangles[i]);
                 triangles[i] -= 14;
-                if (triangles[i] < 0)
-                { Debug.Log("fucked up tri" + triangles[i]); }
+                //if (triangles[i] < 0)
+                //{ Debug.Log("fucked up tri" + triangles[i]); }
                 //Debug.Log("after " + triangles[i]);
             }
             if (i >= blockInPlate * 24 * 3 && i < (blockInPlate+1) * 24 * 3)
             {
-                Debug.Log("removing triangle " + i);
+               // Debug.Log("removing triangle " + i);
                 //m.triangles[i] = -1;
                 triangles.RemoveAt(i);
             }
         }
 
         //clean up block lists
-        
+        //decrement blockindex
         foreach (GameObject p in plates)
         {
             BlockInfo binfo = p.GetComponent<BlockInfo>();
@@ -726,6 +818,17 @@ public class BlockManager : MonoBehaviour
                 }
             }
         }
+        /*decrement tile lookup
+        for (int t = 0; t < WorldManager.activeWorld.tiles.Count; t++)
+        {
+            for (int b = 0; b < maxHeight; b++)
+            {
+                if (blocksOnTile[t][b] > blockInWorld)
+                {
+                    blocksOnTile[t][b]--;
+                }
+            }
+        }*/
         
         info.blockIndexes.RemoveAt(blockInPlate);
         blocks.RemoveAt(blockInWorld);
@@ -741,6 +844,92 @@ public class BlockManager : MonoBehaviour
         //m.triangles = triangles.ToArray();
         mf.sharedMesh = m;
         mc.sharedMesh = m;
+    }
+
+    public void ChangeType(HexBlock hb, TileType toType)
+    {
+        hb.type = toType;
+        Mesh mesh = BlockManager.plateMeshes[hb.plate];
+        IntCoord newCoord = WorldManager.staticTileSet.GetUVForType(toType);
+        //newCoord.y = generation;
+        Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
+        Vector2[] uvs = mesh.uv;
+        int ind = plateInfos[hb.plate].blockIndexes.IndexOf(blocks.IndexOf(hb)) * 14;
+        uvs[ind] = WorldRenderer.uv0 + newOffset;
+        uvs[ind + 1] = WorldRenderer.uv1 + newOffset;
+        uvs[ind + 2] = WorldRenderer.uv2 + newOffset;
+        uvs[ind + 3] = WorldRenderer.uv3 + newOffset;
+        uvs[ind + 4] = WorldRenderer.uv4 + newOffset;
+        uvs[ind + 5] = WorldRenderer.uv5 + newOffset;
+        uvs[ind + 6] = WorldRenderer.uv6 + newOffset;
+        uvs[ind + 7] = WorldRenderer.uv0 + newOffset;
+        uvs[ind + 8] = WorldRenderer.uv1 + newOffset;
+        uvs[ind + 9] = WorldRenderer.uv2 + newOffset;
+        uvs[ind + 10] = WorldRenderer.uv3 + newOffset;
+        uvs[ind + 11] = WorldRenderer.uv4 + newOffset;
+        uvs[ind + 12] = WorldRenderer.uv5 + newOffset;
+        uvs[ind + 13] = WorldRenderer.uv6 + newOffset;
+        mesh.uv = uvs;
+        //catch (Exception e) { Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e); }
+    }
+
+    public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
+    {
+        return blocks[blocksOnTile[tile][blockHeight]];
+    }
+    
+    public void Populate(string seed)
+    {
+        heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
+    }
+    public int[] GenerateHeightmap(byte[] seed)
+    {
+        Debug.Log("seed length" + seed.Length);
+        int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
+        
+        Perlin perlin = new Perlin();
+        float sc = 99;
+        float f = 0.0000012f;
+        float l = 2.4f;
+        float p = .2f;
+        int o = 6;
+        float amplitude = 512f;
+        //float glyphProb = 64;
+        for (int i = 0; i < seed.Length; i++)
+        {
+            UnityEngine.Random.InitState(seed[i]);
+            perlin.Seed = seed[i];
+            //initialize 
+            if (i == 0)
+            {
+                for (int h = 0; h < hmap.Length; h++)
+                {
+                    hmap[h] = 64;
+                }
+            }
+            
+          
+            PerlinAdjust(hmap, perlin, f, l, p, amplitude, o, sc);
+        }
+
+        return hmap;
+    }
+    public void PerlinAdjust(int[] hmap, Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
+    {
+        perlin.Frequency = frequency;
+        perlin.Lacunarity = lacunarity;
+        perlin.Persistence = persistence;
+        perlin.OctaveCount = octaves;
+        for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
+        {
+            HexTile ht = WorldManager.activeWorld.tiles[i];
+            //Get next height
+            double perlinVal = perlin.GetValue(ht.hexagon.center.x * scale, ht.hexagon.center.y * scale, ht.hexagon.center.z * scale);
+            double v1 = perlinVal * amplitude;//*i; 
+            int h = (int)v1;
+            hmap[i] += h;
+            hmap[i] %= 256;
+        }
     }
 }
 

@@ -13,8 +13,10 @@ public class WorldManager : MonoBehaviour
   public string worldCaptureName;
   public RenderTexture activeTex;
   public static World activeWorld;
+  //public static World activeSatellite;
   public GameObject combatManager;
   public TileSet regularTileSet;
+  public static TileSet staticTileSet;
   public float worldScale = 1;
   public int worldSubdivisions = 1;
   public static int uvWidth = 100;
@@ -92,6 +94,7 @@ public class WorldManager : MonoBehaviour
   
   public World Initialize(bool loadWorld = false)
   {
+    staticTileSet = regularTileSet;
     currentWorldObject = new GameObject("World");
     currentWorldTrans = currentWorldObject.transform;
     //activeWorld = new World();
@@ -99,7 +102,7 @@ public class WorldManager : MonoBehaviour
     if (loadWorld)
     {
       activeWorld = LoadWorld();
-
+      //activeSatellite = LoadWorld();
       //random world test
       seed = new byte[32];
       for(int i = 0; i < 32; i++)
@@ -187,13 +190,17 @@ public class WorldManager : MonoBehaviour
       activeWorld = new World();
       activeWorld.PrepForCache(worldScale, worldSubdivisions); //only being used for base planets right now
     }
-
+    
     worldRenderer = GetComponent<WorldRenderer>();
     //render plates
     foreach (GameObject g in worldRenderer.HexPlates(activeWorld, regularTileSet))
     {
       g.transform.parent = currentWorldTrans;
+      //turned off hextile rendering
+      g.GetComponent<MeshRenderer>().enabled = false;
+      g.GetComponent<MeshCollider>().enabled = false;
     }
+    
     Debug.Log(activeWorld.tiles.Count);
      /*
     foreach(HexTile ht in activeWorld.tiles)
@@ -222,13 +229,33 @@ public class WorldManager : MonoBehaviour
       CombatManager cm = combatManager.GetComponent<CombatManager>();
       cm.Initialize(activeWorld);
     }
+    //block tests
     BlockManager bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
-    //place bedrock layer of blocks
+        //place bedrock layer of blocks
+        //generate heightmap from seed
+        string s = "seedtest";
+        bM.Populate(s);
     foreach (HexTile ht in activeWorld.tiles)
     {
-        bM.CreateBlock(ht, ht.type, ht.hexagon.center.magnitude + 1, ht.hexagon.center.magnitude, true);
+            bool bedrock;
+            for (int i = 0; i < BlockManager.maxHeight; i++)
+            {
+                if (i == 0)
+                {
+                    bedrock = true;
+                }
+                else
+                {
+                    bedrock = false;
+                }
+                if (i <= BlockManager.heightmap[ht.index])
+                {
+                    bM.CreateBlock(ht, ht.type, i, bedrock);
+                }
+            }    
     }
     bM.BlockPlates(activeWorld, regularTileSet);
+    
     return activeWorld;
   }
 

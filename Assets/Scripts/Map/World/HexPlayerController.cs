@@ -19,7 +19,14 @@ public class HexPlayerController : MonoBehaviour {
 	public float walkSpeed = 1.33f;
 	public float runSpeed = 1.33f;
 	public float rotateSpeed = 2.4f;
-	public float jumpHeight = 24f;
+    public float jumpHeight = 24f;
+    public float scaleScaleFactor = .024f;
+    public float gravityScaleFactor = .024f;
+    public float jumpScaleFactor = 4.2f;
+    public float walkScaleFactor = .011f;
+    public float rayScaleFactor = 1f;
+    public float zoomFactor = .24f;
+   
 	public bool canJump;
 	public bool jumped;
 	public int numberOfJumps;
@@ -44,7 +51,7 @@ public class HexPlayerController : MonoBehaviour {
 		cam = Camera.main;
 		wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
 		aW = WorldManager.activeWorld;
-		trans.position = aW.tiles[spawnTile].hexagon.center;
+		trans.position = aW.tiles[spawnTile].hexagon.center *10f;
 		origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
 		animator = player.GetComponent<Animator>();
 		animator.enabled = true;
@@ -71,23 +78,21 @@ public class HexPlayerController : MonoBehaviour {
 	}
 	void Update()
 	{
-		if(Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
-		{
-			numberOfJumps++;
-			jumped = true;
-		}
-		
-		float f = Input.GetAxis("Mouse ScrollWheel");
-		Vector3 v = cam.transform.position - head.position;
-		if(v.magnitude <= zoomMax && f < 0){cam.transform.position -= f*v*camZoomStep;}
-		if(v.magnitude >= zoomMin && f > 0){cam.transform.position -= f*v*camZoomStep;}
+        float f = Input.GetAxis("Mouse ScrollWheel");
+        if (f > 0 || f < 0)
+        {
+            Vector3 v = cam.transform.position - head.position;
+            if (v.magnitude <= zoomMax && f < 0) { cam.transform.position -= f * v * camZoomStep; }
+            if (v.magnitude >= zoomMin && f > 0) { cam.transform.position -= f * v * camZoomStep; }
+        }
 	}
-	// Update is called once per frame
-	void FixedUpdate () { 
-		gravityDir = (origin - trans.position).normalized;
-		trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
-		rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
-		/* 
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        gravityDir = (origin - trans.position).normalized;
+        trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
+        rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
+        /* 
 		if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
@@ -100,27 +105,27 @@ public class HexPlayerController : MonoBehaviour {
 			}
 		}
 		*/
-		if(rigbody.velocity.sqrMagnitude == 0)
-		{
-			animator.Play("Idle");
-		}
-		
-		float vert = Input.GetAxis("Vertical");
-		if(vert != 0)
-		{
-			rigbody.velocity += trans.forward * vert * walkSpeed;
-			animator.Play("Walk");
-		}
+        if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
+        {
+            animator.Play("Idle");
+        }
 
-		float horz = Input.GetAxis("Horizontal");
-		if(horz != 0)
-		{
-			//rigbody.velocity += -trans.right * vert * walkSpeed;
-			trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
-			animator.Play("Walk");
-		}
-		
-		/* 
+        float vert = Input.GetAxis("Vertical");
+        if (vert != 0)
+        {
+            rigbody.velocity += trans.forward * vert * walkSpeed;
+            animator.Play("Walk");
+        }
+
+        float horz = Input.GetAxis("Horizontal");
+        if (horz != 0)
+        {
+            //rigbody.velocity += -trans.right * vert * walkSpeed;
+            trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
+            animator.Play("Walk");
+        }
+
+        /* 
 		if(Input.GetKey(KeyCode.W))
 		{
 			//animator.enabled = true;
@@ -160,34 +165,53 @@ public class HexPlayerController : MonoBehaviour {
 			//animator.Play("Walk");
 		}
 		*/
+        if (Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
+        {
+            numberOfJumps++;
+            jumped = true;
+            animator.Play("Levitate");
+            rigbody.AddForce(-gravityDir * jumpHeight);
+            //jumped = false;
+        }
+        if (numberOfJumps >= maxJumps)
+        {
+            canJump = false;
+        }
+        if (Input.GetKey(KeyCode.Mouse1))
+        {
+            cam.transform.RotateAround(head.position, gravityDir, -camRotateSpeed * Input.GetAxis("Mouse X"));
+            cam.transform.RotateAround(cam.transform.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
+            cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
+        }
 
-		if(jumped && canJump)
-		{
-			animator.Play("Levitate");
-			rigbody.AddForce(-gravityDir * jumpHeight);
-			jumped = false;
-		}
-		if(numberOfJumps >= maxJumps)
-		{
-			canJump = false;
-		}
-		if(Input.GetKey(KeyCode.Mouse1))
-		{
-			cam.transform.RotateAround(head.position, gravityDir, -camRotateSpeed*Input.GetAxis("Mouse X"));
-			cam.transform.RotateAround(cam.transform.position, cam.transform.right, -camRotateSpeed*Input.GetAxis("Mouse Y"));
-			cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed*Input.GetAxis("Mouse Y"));
-		}
-	}
+        //adjust scale, jumpheight, movespeed
+        float mag = trans.position.magnitude;
+        trans.localScale = Vector3.one * mag * scaleScaleFactor;
+        gravityScale = mag * gravityScaleFactor;
+        jumpHeight = mag * jumpScaleFactor;
+        walkSpeed = mag * walkScaleFactor;
+        runSpeed = mag * walkScaleFactor;
+        zoomMax = mag * zoomFactor;
+        zoomMin = mag * zoomFactor;
+        BlockManager.rayrange = mag * rayScaleFactor;
+
+    }
 	void OnCollisionEnter(Collision collision)
 	{
 		if(numberOfJumps > 0)
 		{
 			numberOfJumps = 0;
-			canJump = true;
+            if (jumped)
+            {
+                jumped = false;
+                canJump = true;
+            }
 		}
+        //animator.Play("Idle");
 	}      
+    /*
 	void OnCollisionStay(Collision collision)
 	{
 		canJump = true;
-	}
+	}*/
 }

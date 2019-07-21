@@ -24,6 +24,7 @@ TagManager:
   - Pet
   - NpcPetReviveSlot
   - World Manager
+  - Block Manager
   layers:
   - Default
   - TransparentFX

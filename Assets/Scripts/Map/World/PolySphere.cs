@@ -309,8 +309,14 @@ public class PolySphere
     
     //Start at some random points across the sphere
     //each tile will have a chance to be assigned its own plate
+    /*
     Debug.Log("tiles per plate: " + maxTilesPerPlate + " tile count: " + sTiles.Count);
-    numberOfPlates = (int)(1 + sTiles.Count/maxTilesPerPlate);//Random.Range(minPlates, maxPlates);
+    numberOfPlates = (int)(sTiles.Count/maxTilesPerPlate);//Random.Range(minPlates, maxPlates);
+    if(numberOfPlates < 1)
+    {
+        Debug.Log("plates less than 1");
+        numberOfPlates = 1;
+    }
     Debug.Log("plate count: " + numberOfPlates);
     for (int f = 0; f < numberOfPlates; f++)
     {
@@ -328,9 +334,10 @@ public class PolySphere
         if(f > 0){f--;}
       }
     }
+    */
     //Fill in neighbors, fill in neighbors of neighbors, repeat until filled
     FloodFill();
-    
+    numberOfPlates = tPlates.Count;
     //Debug.Log(plates.Count);
     //Make the plates!
     BuildPlates();
@@ -457,36 +464,53 @@ public class PolySphere
   }
   void FloodFill() //Recursive
   {
-    bool go = false;
-    List<SphereTile> toAssign = new List<SphereTile>();
-    for(int i = 0; i < tPlates.Count; i++)
-    {
-      foreach (SphereTile st in tPlates[i])
-      {
-        foreach (SphereTile nst in st.neighborList)
+        bool go = false;
+        //Check for a new plate
+        foreach (SphereTile s in sTiles)
         {
-          if (nst.plate == -1)
-          {
-            toAssign.Add(nst);
-            nst.plate = i;
-          }
+            if (s.plate == -1)
+            {
+                Debug.Log("creating plate: " + tPlates.Count);
+                //recurse back later
+                go = true;
+                //make a new plate with this as origin
+                s.plateOrigin = true;
+                s.plate = tPlates.Count;
+                tPlates.Add(new List<SphereTile>());
+                tPlates[s.plate].Add(s);
+                break; //one added per call
+            }
         }
-      }
-      foreach (SphereTile s in toAssign)
-      {
-        tPlates[i].Add(s);
-      }
-    }
-    //check if we've done all the tiles
-    foreach (SphereTile s in sTiles)
-    {
-      if (s.plate == -1)
-      {
-        go = true;
-      }
-    }
-
-    if (go) { FloodFill(); } 
+        //floodfill
+        if (go)
+        {
+            for (int i = 0; i < tPlates.Count; i++)
+            {
+                List<SphereTile> toAssign = new List<SphereTile>();
+                if (tPlates[i].Count < maxTilesPerPlate)
+                {
+                    foreach (SphereTile st in tPlates[i])
+                    {
+                        foreach (SphereTile nst in st.neighborList)
+                        {
+                            if (nst.plate == -1)
+                            {
+                                if (tPlates[i].Count + toAssign.Count < maxTilesPerPlate)
+                                {
+                                    toAssign.Add(nst);
+                                    nst.plate = i;
+                                }
+                            }
+                        }
+                    }
+                    foreach (SphereTile s in toAssign)
+                    {
+                        tPlates[i].Add(s);
+                    }
+                }
+            }
+            FloodFill(); //recurse
+        }
   }
 
   void BuildPlates()
@@ -544,8 +568,6 @@ public class PolySphere
     }
     //Boundaries are defined, next tile heights are set by Tectonics()
   }
-
-
 
   List<Triangle> Icosahedron(float scale)
   {
@@ -718,7 +740,7 @@ public class PolySphere
       RecursiveAssign(hexes, tilesDefined);
     }
   }
-  //Using RecursiveNeighbors instead
+  //Redacted, using RecursiveNeighbors instead
   void TraverseAndAssignNeighbors(List<Hexagon> hexes, List<SphereTile> sTiles)
   { 
     bool[] tilesDefined = new bool[hexes.Count];
