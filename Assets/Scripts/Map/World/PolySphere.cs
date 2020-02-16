@@ -470,7 +470,7 @@ public class PolySphere
         {
             if (s.plate == -1)
             {
-                Debug.Log("creating plate: " + tPlates.Count);
+                //Debug.Log("creating plate: " + tPlates.Count);
                 //recurse back later
                 go = true;
                 //make a new plate with this as origin

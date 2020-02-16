@@ -1,4 +1,5 @@
-﻿using LibNoise.Unity.Generator;
+﻿using System;
+using LibNoise.Unity.Generator;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,9 +12,11 @@ public class BlockManager : MonoBehaviour
     public static List<BlockInfo> plateInfos;
     public static Dictionary<int, int[]> blocksOnTile; //hex tile index to block index array, ascending order
     public static int[] heightmap; //top block by hex tile index
+    public static int avgHeight;
+    public static int cloudHeight = 200;
+    public static float cloudDensity = .24f;
     public static float rayrange;
 
-    
     public GameObject blockPrefab;
     public WorldManager worldManager;
     public TileType toPlace;
@@ -24,8 +27,10 @@ public class BlockManager : MonoBehaviour
     float uvTileWidth = 1.0f / 16f;
     float uvTileHeight = 1.0f / 16f;
 
-    private static float _blockScaleFactor = 0.1f;
-    public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
+    public static float blockScaleFactor = 0.1f;
+    public static float blockQuarterFactor = .025f;
+    //private static float _blockScaleFactor = 0.1f;
+    //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
 
     //public TileSet tileSet;
     // Start is called before the first frame update
@@ -50,6 +55,11 @@ public class BlockManager : MonoBehaviour
         //placing inputs
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
+            bool quarterBlock = false;
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                quarterBlock = true;
+            }
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
             Debug.Log("ray range " + rayrange);
@@ -76,7 +86,7 @@ public class BlockManager : MonoBehaviour
                     }
                     //float h = hb.height;
                     //float bH = h - (h * blockScaleFactor);
-                    
+
                     if (tri < 6) //top
                     {
 
@@ -88,8 +98,8 @@ public class BlockManager : MonoBehaviour
                         }
                         Debug.Log("placing at height " + hb.blockHeight + 1);
 
-                        CreateBlock(tile, toPlace, hb.blockHeight + 1, false);
-                        AddToPlate(hitObject, blocks.Count -1);
+                        blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight + 1, false, quarterBlock));
+                        AddToPlate(hitObject, blocks.Count - 1);
                     }
                     if (tri >= 6 && tri < 12) //bot
                     {
@@ -99,13 +109,13 @@ public class BlockManager : MonoBehaviour
                             Debug.Log("min height exceeded");
                             return;
                         }
-                        CreateBlock(tile, toPlace, hb.blockHeight - 1, false);
-                        AddToPlate(hitObject, blocks.Count -1);
+                        blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight - 1, false, quarterBlock));
+                        AddToPlate(hitObject, blocks.Count - 1);
                     }
                     if (tri >= 12 && tri < 24) //side
                     {
                         //get neighbor
-                        Vector3 point = hit.point;                        
+                        Vector3 point = hit.point;
                         HexTile n = WorldManager.activeWorld.tiles[tile.neighbors[0]];
                         Vector3 cand = point - (Vector3)n.hexagon.center;
                         float check = cand.magnitude;
@@ -119,7 +129,7 @@ public class BlockManager : MonoBehaviour
                                 check = nextCheck;
                             }
                         }
-                        CreateBlock(n, toPlace, hb.blockHeight, false);
+                        blocks.Add(CreateBlock(n, toPlace, hb.blockHeight, false, quarterBlock));
                         AddToPlate(plates[n.plate], blocks.Count - 1);
                     }
                 }
@@ -138,7 +148,7 @@ public class BlockManager : MonoBehaviour
                 //Find block we hit
                 int tri = hit.triangleIndex;// % 24;
                 int blockInPlate = tri / 24;
-                
+
                 if (info != null)
                 {
                     int blockInWorld = info.blockIndexes[blockInPlate];
@@ -162,7 +172,7 @@ public class BlockManager : MonoBehaviour
         }
     }
 
-    public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable)
+    public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
     {
         if (blocks == null)
         {
@@ -177,12 +187,12 @@ public class BlockManager : MonoBehaviour
         {
             blocksOnTile[tile.index] = new int[maxHeight];
         }
-        HexBlock toPlace = new HexBlock(tile, type, blockHeight, isBreakable);//, isBedrock);
+        HexBlock toPlace = new HexBlock(tile, type, blockHeight, isBreakable, quarterBlock);//, isBedrock);
 
         //add to tile lookup
-        blocksOnTile[tile.index][blockHeight] = blocks.Count;
+        //blocksOnTile[tile.index][blockHeight] = blocks.Count;
 
-        blocks.Add(toPlace);
+        //blocks.Add(toPlace);
         return toPlace;
     }
 
@@ -191,7 +201,7 @@ public class BlockManager : MonoBehaviour
         if (worldManager == null)
         {
             worldManager = GameObject.FindWithTag("World Manager").GetComponent<WorldManager>();
-            
+
         }
         if (plates == null)
         {
@@ -212,17 +222,17 @@ public class BlockManager : MonoBehaviour
         {
 
             output.Add(RenderBlockPlate(blocks, i));
-           
+
         }
         plates = output;
-        
+
         return output;
     }
 
     public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
     {
         GameObject output = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
-        
+
         output.layer = 0;
         MeshFilter myFilter = output.GetComponent<MeshFilter>();
         MeshCollider myCollider = output.GetComponent<MeshCollider>();
@@ -233,8 +243,8 @@ public class BlockManager : MonoBehaviour
         List<Vector3> normals = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         //test
-         //tileSet.tileHeight / texHeight;
-                                         //TileType type = TileType.Water;
+        //tileSet.tileHeight / texHeight;
+        //TileType type = TileType.Water;
         //int bNum = 0;
         BlockInfo info = output.GetComponent<BlockInfo>();
         info.plateIndex = p;
@@ -251,7 +261,7 @@ public class BlockManager : MonoBehaviour
                 //bNum++;
                 info.blockIndexes.Add(i);
                 //info.blockCount = bNum;
-                
+
 
                 //info.tileIndex = hb.tileIndex;
                 //info.topTris = new List<int>();
@@ -479,7 +489,7 @@ public class BlockManager : MonoBehaviour
                 triangles.Add(vertices.Count - 2);
                 triangles.Add(vertices.Count - 1);
             }
-            
+
         }
         //Debug.Log("plate " + p + " block count " + info.blockIndexes.Count);
         //@BUG fix the plate generation, quick fix for this plateOrigin bug
@@ -756,7 +766,7 @@ public class BlockManager : MonoBehaviour
         m.uv = uvs.ToArray();
         mf.sharedMesh = m;
         mc.sharedMesh = m;
-        
+
         //return output;
     }
 
@@ -769,7 +779,7 @@ public class BlockManager : MonoBehaviour
 
         BlockInfo info = plate.GetComponent<BlockInfo>();
         int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
-        
+
         List<int> triangles = m.triangles.ToList();
         List<Vector3> vertices = m.vertices.ToList();
         List<Vector3> normals = m.normals.ToList();
@@ -790,7 +800,7 @@ public class BlockManager : MonoBehaviour
             }
         }
         //remove triangles
-        
+
         for (int i = triangles.Count - 1; i >= 0; i--)
         {
             if (i >= (blockInPlate + 1) * 24 * 3)
@@ -802,9 +812,9 @@ public class BlockManager : MonoBehaviour
                 //{ Debug.Log("fucked up tri" + triangles[i]); }
                 //Debug.Log("after " + triangles[i]);
             }
-            if (i >= blockInPlate * 24 * 3 && i < (blockInPlate+1) * 24 * 3)
+            if (i >= blockInPlate * 24 * 3 && i < (blockInPlate + 1) * 24 * 3)
             {
-               // Debug.Log("removing triangle " + i);
+                // Debug.Log("removing triangle " + i);
                 //m.triangles[i] = -1;
                 triangles.RemoveAt(i);
             }
@@ -834,7 +844,7 @@ public class BlockManager : MonoBehaviour
                 }
             }
         }*/
-        
+
         info.blockIndexes.RemoveAt(blockInPlate);
         blocks.RemoveAt(blockInWorld);
         //reset mesh
@@ -851,47 +861,56 @@ public class BlockManager : MonoBehaviour
         mc.sharedMesh = m;
     }
 
-    public void ChangeType(HexBlock hb, TileType toType)
-    {
-        hb.type = toType;
-        Mesh mesh = BlockManager.plateMeshes[hb.plate];
-        IntCoord newCoord = WorldManager.staticTileSet.GetUVForType(toType);
-        //newCoord.y = generation;
-        Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
-        Vector2[] uvs = mesh.uv;
-        int ind = plateInfos[hb.plate].blockIndexes.IndexOf(blocks.IndexOf(hb)) * 14;
-        uvs[ind] = WorldRenderer.uv0 + newOffset;
-        uvs[ind + 1] = WorldRenderer.uv1 + newOffset;
-        uvs[ind + 2] = WorldRenderer.uv2 + newOffset;
-        uvs[ind + 3] = WorldRenderer.uv3 + newOffset;
-        uvs[ind + 4] = WorldRenderer.uv4 + newOffset;
-        uvs[ind + 5] = WorldRenderer.uv5 + newOffset;
-        uvs[ind + 6] = WorldRenderer.uv6 + newOffset;
-        uvs[ind + 7] = WorldRenderer.uv0 + newOffset;
-        uvs[ind + 8] = WorldRenderer.uv1 + newOffset;
-        uvs[ind + 9] = WorldRenderer.uv2 + newOffset;
-        uvs[ind + 10] = WorldRenderer.uv3 + newOffset;
-        uvs[ind + 11] = WorldRenderer.uv4 + newOffset;
-        uvs[ind + 12] = WorldRenderer.uv5 + newOffset;
-        uvs[ind + 13] = WorldRenderer.uv6 + newOffset;
-        mesh.uv = uvs;
-        //catch (Exception e) { Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e); }
-    }
+
 
     public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
     {
         return blocks[blocksOnTile[tile][blockHeight]];
     }
-    
+    public void Biomes()
+    {
+        //set the initial biomes
+        for (int i = 0; i < blocksOnTile.Count; i++)
+        {
+            int l = blocksOnTile[i].Length;
+            for (int b = 0; b < l; b++)
+            {
+                if (b == l - 1)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Earth);
+                }
+
+                if (b <= l - 2 && b >= l - 6)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Arbor);
+                }
+
+                if (b < l - 6)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Metal);
+                }
+            }
+        }
+    }
     public void Populate(string seed)
     {
+        Debug.Log("GETTING INTO POPULATE");
+        //set the surface heights
         heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
+        foreach (int h in heightmap)
+        {
+            avgHeight += h;
+        }
+        avgHeight /= heightmap.Length;
+        //int[] noBlock = new int[blocks.Count];
+        PlaceBlocksIfNotInCave(SeedHandler.StringToBytes(seed));
+        //RefineWorld(SeedHandler.StringToBytes(seed));
     }
     public int[] GenerateHeightmap(byte[] seed)
     {
         Debug.Log("seed length" + seed.Length);
         int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
-        
+
         Perlin perlin = new Perlin();
         float sc = 99;
         float f = 0.0000012f;
@@ -912,14 +931,12 @@ public class BlockManager : MonoBehaviour
                     hmap[h] = 64;
                 }
             }
-            
-          
-            PerlinAdjust(hmap, perlin, f, l, p, amplitude, o, sc);
+            PerlinHeightmapAdjust(hmap, perlin, f, l, p, amplitude, o, sc);
         }
 
         return hmap;
     }
-    public void PerlinAdjust(int[] hmap, Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
+    public void PerlinHeightmapAdjust(int[] hmap, Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
     {
         perlin.Frequency = frequency;
         perlin.Lacunarity = lacunarity;
@@ -935,6 +952,81 @@ public class BlockManager : MonoBehaviour
             hmap[i] += h;
             hmap[i] %= 256;
         }
+    }
+
+    public void PlaceBlocksIfNotInCave(byte[] seed)
+    {
+        Perlin perlin = new Perlin();
+        float sc = 99f;
+        float f = .0000002f;
+        float l = 2.4f;
+        float p = .24f;
+        int o = 6;
+        float amplitude = 512f;
+
+        int perl = BitConverter.ToInt32(seed, 0);
+        perlin.Seed = perl;
+        PerlinCaves(perlin, f, l, p, amplitude, o, sc);
+    }
+
+    public void PerlinCaves(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
+    {
+        perlin.Frequency = frequency;
+        perlin.Lacunarity = lacunarity;
+        perlin.Persistence = persistence;
+        perlin.OctaveCount = octaves;
+        double pAvg = 0;
+        int it = 0;
+        foreach (HexTile ht in WorldManager.activeWorld.tiles)
+        {
+            bool bedrock;
+            bool quarterBlock = false;
+            for (int i = 0; i < BlockManager.maxHeight; i++)
+            {
+                if (i == 0)
+                {
+                    bedrock = true;
+                }
+                else
+                {
+                    bedrock = false;
+                }
+                int h = BlockManager.heightmap[ht.index];
+                if (i <= h)
+                {
+                    TileType t = TileType.Metal;
+                    //inital biomes
+                    if (i == h)
+                    {
+                        t = TileType.Earth;
+                        quarterBlock = true;
+                    }
+                    if (i < h && i >= h - 6)
+                    {
+                        t = TileType.Arbor;
+                    }
+                    HexBlock hb = CreateBlock(ht, t, i, bedrock, quarterBlock);
+                    double perlinVal = perlin.GetValue(hb.topCenter.x * scale, hb.topCenter.y * scale, hb.topCenter.z * scale);// * amplitude;
+                    
+                    pAvg += perlinVal;
+                    it++;
+                    //Debug.Log(perlinVal);
+                    if (perlinVal > 0 || hb.type != TileType.Metal || hb.unbreakable)
+                    {
+                        Debug.Log("placed block");
+                        blocks.Add(hb);
+                        blocksOnTile[ht.index][i] = blocks.Count - 1;
+                    }
+                    else { Debug.Log("didn't place block"); }
+                }
+            }
+        }
+        Debug.Log(pAvg / it);
+    }
+
+    public double GetPerlinForBlock(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
+    {
+        return 1;
     }
 }
 

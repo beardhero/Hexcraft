@@ -17,8 +17,8 @@ public class WorldManager : MonoBehaviour
   public GameObject combatManager;
   public TileSet regularTileSet;
   public static TileSet staticTileSet;
-  public static float worldScale = 3;
-  public static int worldSubdivisions = 4;
+  public static float worldScale = 16;
+  public static int worldSubdivisions = 5;
   public static int uvWidth = 100;
   public static int uvHeight;
   public bool b;
@@ -91,6 +91,8 @@ public class WorldManager : MonoBehaviour
   GameObject newAnt;
   HexTile startingTile;
   HexTile forwardTile;
+
+  public BlockManager bM;
   
   public World Initialize(bool loadWorld = false)
   {
@@ -202,27 +204,6 @@ public class WorldManager : MonoBehaviour
     }
     
     Debug.Log(activeWorld.tiles.Count);
-     /*
-    foreach(HexTile ht in activeWorld.tiles)
-    {
-      ht.ChangeType(ht.type);
-    }*/
-    
-    if(loadWorld)
-    {
-       //StartCoroutine(SpawnElementals());
-    }
-    /* 
-    foreach(HexTile ht in activeWorld.tiles)
-    {
-      ht.ChangeType(TileType.Sol);
-    }
-    */
-    //layermask = 1 << 8;   // Layer 8 is set up as "Chunk" in the Tags & Layers manager
-
-    //labelDirections = true;
-
-    //DrawHexIndices();
 
     if(combatManager != null)
     {
@@ -230,32 +211,19 @@ public class WorldManager : MonoBehaviour
       cm.Initialize(activeWorld);
     }
     //block tests
-    BlockManager bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
+    bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
+        BlockManager.blockScaleFactor /= worldSubdivisions;
+        BlockManager.blockQuarterFactor /= worldSubdivisions;
         //place bedrock layer of blocks
         //generate heightmap from seed
-        string s = "seedtest";
+        string s = "seedtestspeedtest";
+        Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
         bM.Populate(s);
-    foreach (HexTile ht in activeWorld.tiles)
-    {
-            bool bedrock;
-            for (int i = 0; i < BlockManager.maxHeight; i++)
-            {
-                if (i == 0)
-                {
-                    bedrock = true;
-                }
-                else
-                {
-                    bedrock = false;
-                }
-                if (i <= BlockManager.heightmap[ht.index])
-                {
-                    bM.CreateBlock(ht, ht.type, i, bedrock);
-                }
-            }    
-    }
     bM.BlockPlates(activeWorld, regularTileSet);
-    
+        //bM.Biomes();
+        //start clouds
+        //StartCoroutine(Clouds());
+
     return activeWorld;
   }
 
@@ -1255,6 +1223,10 @@ public class WorldManager : MonoBehaviour
         File.WriteAllBytes ("Assets/Dragons/" + worldCaptureName + ".png", bytes);
   }
 
+    public IEnumerator Clouds()
+    {
+        yield return null;
+    }
 
   //@TODO: This is preliminary, it sets the ocean tiles using average scale 
   //by making any tile close to the average or below blue, then scaling the blue tiles up to the average.
