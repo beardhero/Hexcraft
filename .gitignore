@@ -39,8 +39,10 @@ Thumbs.db
 # UNITY 3D #
 ############
 *.csproj
+*.csprojAssemblyReference
 *.sln
 *.userprefs
+obj/
 Temp/
 Library/
 Assets/Animations/Animations.meta

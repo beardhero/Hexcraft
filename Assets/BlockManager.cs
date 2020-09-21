@@ -19,6 +19,7 @@ public class BlockManager : MonoBehaviour
 
     public GameObject blockPrefab;
     public WorldManager worldManager;
+    //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
     public static int maxHeight = 256;
@@ -36,6 +37,7 @@ public class BlockManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //playerTrans = GameObject.FindGameObjectWithTag("Player").transform;
         //blockScaleFactor /= WorldManager.worldSubdivisions;
     }
 
@@ -60,7 +62,7 @@ public class BlockManager : MonoBehaviour
             {
                 quarterBlock = true;
             }
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
             RaycastHit hit = new RaycastHit();
             Debug.Log("ray range " + rayrange);
             if (Physics.Raycast(ray, out hit, rayrange))
@@ -138,7 +140,7 @@ public class BlockManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Mouse1))
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
             RaycastHit hit = new RaycastHit();
 
             if (Physics.Raycast(ray, out hit, rayrange))
@@ -1013,11 +1015,9 @@ public class BlockManager : MonoBehaviour
                     //Debug.Log(perlinVal);
                     if (perlinVal > 0 || hb.type != TileType.Metal || hb.unbreakable)
                     {
-                        Debug.Log("placed block");
                         blocks.Add(hb);
                         blocksOnTile[ht.index][i] = blocks.Count - 1;
                     }
-                    else { Debug.Log("didn't place block"); }
                 }
             }
         }

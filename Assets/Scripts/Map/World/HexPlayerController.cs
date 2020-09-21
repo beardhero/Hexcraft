@@ -8,22 +8,22 @@ public class HexPlayerController : MonoBehaviour {
 	GameObject player;
 	Transform head;
 	Vector3 gravityDir;
-	Vector3 moveDir;
-	WorldManager wM;
+	//Vector3 moveDir;
+	//WorldManager wM;
 	World aW;
 	Vector3 origin;
 	Animator animator;
 	//float currentHeight = 0;
 	//float testH = 0;
-	public float gravityScale = 4f;
-	public float walkSpeed = 1.33f;
-	public float runSpeed = 1.33f;
-	public float rotateSpeed = 2.4f;
-    public float jumpHeight = 24f;
+	public float gravityScale = 0;
+	public float walkSpeed = 0;
+	public float runSpeed = 0;
+	public float rotateSpeed = 6;
+    public float jumpHeight = 0;
     public float scaleScaleFactor = .024f;
-    public float gravityScaleFactor = .024f;
-    public float jumpScaleFactor = 4.2f;
-    public float walkScaleFactor = .011f;
+    public float gravityScaleFactor = .24f;
+    public float jumpScaleFactor = 5f;
+    public float walkScaleFactor = .12f;
     public float rayScaleFactor = 1f;
     public float zoomFactor = .24f;
    
@@ -32,24 +32,28 @@ public class HexPlayerController : MonoBehaviour {
 	public int numberOfJumps;
 	public int maxJumps = 2;
 	public Camera cam;
-	public float zoomMax = 10.0f;
-	public float zoomMin = 0.5f;
+	public float zoomMax = 6f;
+	public float zoomMin = 0f;
 	public float camZoomStep = .1f;
 	//public float camZoomStep = .3f;
 	public float camRotateSpeed = 4.2f;
 	public float camSens = .5f;
 	public int spawnTile = 0;
-	//public Runebook runeBook;
-	// Use this for initialization
-	void Start () {
+    //private float rotationApex = -1f;
+    //private Transform initialTrans;
+
+    //public Runebook runeBook;
+    // Use this for initialization
+    void Start () {
 		player = this.gameObject;
 		trans = player.transform;
+        //initialTrans = trans;
 		head = GameObject.Find("Head").transform;
 		rigbody = GetComponent<Rigidbody>();
 		rigbody.useGravity = false;
 		rigbody.freezeRotation = true;
 		cam = Camera.main;
-		wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
+		//wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
 		aW = WorldManager.activeWorld;
 		trans.position = aW.tiles[spawnTile].hexagon.center *10f;
 		origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
@@ -78,33 +82,35 @@ public class HexPlayerController : MonoBehaviour {
 	}
 	void Update()
 	{
-        float f = Input.GetAxis("Mouse ScrollWheel");
+        /*float f = Input.GetAxis("Mouse ScrollWheel");
         if (f > 0 || f < 0)
         {
             Vector3 v = cam.transform.position - head.position;
             if (v.magnitude <= zoomMax && f < 0) { cam.transform.position -= f * v * camZoomStep; }
             if (v.magnitude >= zoomMin && f > 0) { cam.transform.position -= f * v * camZoomStep; }
+        }*/
+        if (Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
+        {
+            numberOfJumps++;
+            jumped = true;
+            animator.Play("Levitate");
+            rigbody.AddForce(-gravityDir * jumpHeight);
+            //jumped = false;
         }
-	}
+        if (numberOfJumps >= maxJumps)
+        {
+            canJump = false;
+        }
+    }
     // Update is called once per frame
     void FixedUpdate()
     {
+        //normalize down
         gravityDir = (origin - trans.position).normalized;
         trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
+        //gravity
         rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
-        /* 
-		if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D))
-		{
-			if(Input.GetKey(KeyCode.LeftShift))
-			{
-				animator.Play("Run");
-			}
-			else
-			{
-				animator.Play("Walk");
-			}
-		}
-		*/
+
         if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
         {
             animator.Play("Idle");
@@ -124,66 +130,22 @@ public class HexPlayerController : MonoBehaviour {
             trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
             animator.Play("Walk");
         }
-
-        /* 
-		if(Input.GetKey(KeyCode.W))
-		{
-			//animator.enabled = true;
-			if(Input.GetKey(KeyCode.LeftShift))
-			{
-				rigbody.velocity += trans.forward * runSpeed;
-				//{animator.Play("Run");}
-			}
-			else
-			{
-				rigbody.velocity += trans.forward * walkSpeed;
-				//{animator.Play("Walk");}
-			}
-		}
-		if(Input.GetKey(KeyCode.S))
-		{
-			//animator.enabled = true;
-			if(Input.GetKey(KeyCode.LeftShift))
-			{
-				rigbody.velocity += -trans.forward * runSpeed;
-				//{animator.Play("Run");}
-			}
-			else{
-				rigbody.velocity += -trans.forward * walkSpeed;
-				//{animator.Play("Walk");}
-			}
-		}
-		
-		if(Input.GetKey(KeyCode.D))
-		{
-			trans.RotateAround(trans.position, gravityDir, -rotateSpeed);
-			//animator.Play("Walk");
-		}
-		if(Input.GetKey(KeyCode.A))
-		{
-			trans.RotateAround(trans.position, gravityDir, rotateSpeed);
-			//animator.Play("Walk");
-		}
-		*/
-        if (Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
-        {
-            numberOfJumps++;
-            jumped = true;
-            animator.Play("Levitate");
-            rigbody.AddForce(-gravityDir * jumpHeight);
-            //jumped = false;
-        }
-        if (numberOfJumps >= maxJumps)
-        {
-            canJump = false;
-        }
-        if (Input.GetKey(KeyCode.Mouse1))
-        {
-            cam.transform.RotateAround(head.position, gravityDir, -camRotateSpeed * Input.GetAxis("Mouse X"));
-            cam.transform.RotateAround(cam.transform.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
+        
+        //cam.transform.RotateAround(head.position.normalized, gravityDir.normalized, -camRotateSpeed * Input.GetAxis("Mouse X"));
+        trans.RotateAround(trans.up, gravityDir, -camRotateSpeed * Input.GetAxis("Mouse X")); 
+        
+        //if (Vector3.Dot(head.position, cam.transform.forward) >= rotationApex) { 
+            //cam.transform.RotateAround(cam.transform.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y")); 
+        //}
+        //Debug.Log(Vector3.Dot(head.position.normalized, cam.transform.forward.normalized));
+        float camDot = Vector3.Dot(head.position.normalized, cam.transform.forward.normalized);
+        if ( (camDot <= .9 && Input.GetAxis("Mouse Y") > 0) || (camDot >= -.9 && Input.GetAxis("Mouse Y") < 0)){
             cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
         }
-
+        if (Input.GetKeyDown(KeyCode.V)) {
+            //reset cam rot
+            cam.transform.rotation = Quaternion.identity;
+        }
         //adjust scale, jumpheight, movespeed
         float mag = trans.position.magnitude;
         trans.localScale = Vector3.one * mag * scaleScaleFactor;
@@ -208,10 +170,12 @@ public class HexPlayerController : MonoBehaviour {
             }
 		}
         //animator.Play("Idle");
-	}      
-    /*
+	}   
+    
 	void OnCollisionStay(Collision collision)
 	{
+        numberOfJumps = 0;
 		canJump = true;
-	}*/
+        jumped = false;
+	}
 }

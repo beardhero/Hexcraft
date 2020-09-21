@@ -22,7 +22,7 @@ public class Actor : MonoBehaviour
   */
   void Start () 
   {
-    player = GameObject.Find("Player");
+    player = GameObject.FindWithTag("Player");
     instanceTrans = player.transform;
     moveRange = new List<int>();
 
