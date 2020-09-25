@@ -31,9 +31,14 @@ class CustomData
 	public string str;
 }
 
-class TypeMessage
+public class TypeMessage
 {
-	public bool hello;
+	public string msgType, contents;
+	public TypeMessage(){}
+	public TypeMessage(string t, string cont){
+		msgType = t;
+		contents = cont;
+	}
 }
 
 enum MessageType {
@@ -45,21 +50,7 @@ class MessageByEnum
 }
 
 public class ColyseusClient : MonoBehaviour {
-
-	// UI Buttons are attached through Unity Inspector
-	public Button
-		m_ConnectButton,
-		m_CreateButton,
-		m_JoinOrCreateButton,
-		m_JoinButton,
-		m_ReconnectButton,
-		m_SendMessageButton,
-		m_LeaveButton,
-		m_GetAvailableRoomsButton;
-	public InputField m_EndpointField;
-	public Text m_IdText, m_SessionIdText;
-
-	public string roomName = "demo";
+	public string roomName = "demo";	// These room names correspond to those defined in Server/rooms
 
 	protected Client client;
 	protected Room<State> room;
@@ -69,29 +60,60 @@ public class ColyseusClient : MonoBehaviour {
 
 	protected IndexedDictionary<Entity, GameObject> entities = new IndexedDictionary<Entity, GameObject>();
 
-	// Use this for initialization
-	void Start () {
-		/* Demo UI */
-		m_ConnectButton.onClick.AddListener(ConnectToServer);
 
-		m_CreateButton.onClick.AddListener(CreateRoom);
-		m_JoinOrCreateButton.onClick.AddListener(JoinOrCreateRoom);
-		m_JoinButton.onClick.AddListener(JoinRoom);
-		m_ReconnectButton.onClick.AddListener(ReconnectRoom);
-		m_SendMessageButton.onClick.AddListener(SendMessage);
-		m_LeaveButton.onClick.AddListener(LeaveRoom);
-		m_GetAvailableRoomsButton.onClick.AddListener(GetAvailableRooms);
+	public void SendTypeMessage(TypeMessage msg)
+	{
+		if (room != null)
+		{
+			// something was here about schema
+			room.Send("TypeMessage", msg);		// Chat is the type
+		}
+		else
+		{
+			Debug.Log("Room is not connected!");
+		}
 	}
 
-	async void ConnectToServer ()
+	public void RegisterRoomHandlers()
 	{
-		/*
-		 * Get Colyseus endpoint from InputField
-		 */
-		string endpoint = m_EndpointField.text;
+		Debug.Log("Starting multi session: " + room.SessionId);
 
+		room.State.entities.OnAdd += OnEntityAdd;
+		room.State.entities.OnRemove += OnEntityRemove;
+		room.State.TriggerAll();
+
+		PlayerPrefs.SetString("roomId", room.Id);
+		PlayerPrefs.SetString("sessionId", room.SessionId);
+		PlayerPrefs.Save();
+
+		room.OnLeave += (code) => Debug.Log("ROOM: ON LEAVE");
+		room.OnError += (code, message) => Debug.LogError("ERROR, code =>" + code + ", message => " + message);
+		room.OnStateChange += OnStateChangeHandler;
+
+		room.OnMessage<TypeMessage>("TypeMessage", (message) =>
+		{
+			GameManager.networkManager.OnTypeMessage(message);
+		});
+
+		room.OnMessage((Message message) =>
+		{
+			Debug.Log("Received Schema message:");
+			Debug.Log(message.num + ", " + message.str);
+		});
+
+		room.OnMessage<MessageByEnum>((byte) MessageType.ONE, (message) =>
+		{
+			Debug.Log(">> Received message by enum/number => " + message.str);
+		});
+
+		_ = room.Send((byte)MessageType.ONE, new MessageByEnum { str = "Sending message by enum/number" });
+
+		Debug.Log("--- ROOM INITIALIZED ---");
+	}
+
+	public async void ConnectToServer (string endpoint)
+	{
 		Debug.Log("Connecting to " + endpoint);
-
 		/*
 		 * Connect into Colyeus Server
 		 */
@@ -99,18 +121,19 @@ public class ColyseusClient : MonoBehaviour {
 
 		await client.Auth.Login();
 
-		var friends = await client.Auth.GetFriends();
+		//var friends = await client.Auth.GetFriends();
 
 		// Update username
 		client.Auth.Username = "Jake";
 		await client.Auth.Save();
+		JoinOrCreateRoom();
 	}
 
 	public async void CreateRoom()
 	{
 		room = await client.Create<State>(roomName, new Dictionary<string, object>() { });
-		//roomNoneSerializer = await client.Create("no_state", new Dictionary<string, object>() { });
-		//roomFossilDelta = await client.Create<IndexedDictionary<string, object>>("fossildelta", new Dictionary<string, object>() { });
+		roomNoneSerializer = await client.Create("no_state", new Dictionary<string, object>() { });
+		roomFossilDelta = await client.Create<IndexedDictionary<string, object>>("fossildelta", new Dictionary<string, object>() { });
 		RegisterRoomHandlers();
 	}
 
@@ -118,6 +141,7 @@ public class ColyseusClient : MonoBehaviour {
 	{
 		room = await client.JoinOrCreate<State>(roomName, new Dictionary<string, object>() { });
 		RegisterRoomHandlers();
+		Debug.Log("finished join or create");
 	}
 
 	public async void JoinRoom ()
@@ -142,44 +166,8 @@ public class ColyseusClient : MonoBehaviour {
 		RegisterRoomHandlers();
 	}
 
-	public void RegisterRoomHandlers()
-	{
-		m_SessionIdText.text = "sessionId: " + room.SessionId;
 
-		room.State.entities.OnAdd += OnEntityAdd;
-		room.State.entities.OnRemove += OnEntityRemove;
-		room.State.TriggerAll();
-
-		PlayerPrefs.SetString("roomId", room.Id);
-		PlayerPrefs.SetString("sessionId", room.SessionId);
-		PlayerPrefs.Save();
-
-		room.OnLeave += (code) => Debug.Log("ROOM: ON LEAVE");
-		room.OnError += (code, message) => Debug.LogError("ERROR, code =>" + code + ", message => " + message);
-		room.OnStateChange += OnStateChangeHandler;
-
-		room.OnMessage((Message message) =>
-		{
-			Debug.Log("Received Schema message:");
-			Debug.Log(message.num + ", " + message.str);
-		});
-
-		room.OnMessage<MessageByEnum>((byte) MessageType.ONE, (message) =>
-		{
-			Debug.Log(">> Received message by enum/number => " + message.str);
-		});
-
-		room.OnMessage<TypeMessage>("type", (message) =>
-		{
-			Debug.Log("Received 'type' message!");
-			Debug.Log(message);
-		});
-
-		_ = room.Send((byte)MessageType.ONE, new MessageByEnum { str = "Sending message by enum/number" });
-	}
-
-
-	async void LeaveRoom()
+	public async void LeaveRoom()
 	{
 		await room.Leave(false);
 
@@ -207,23 +195,6 @@ public class ColyseusClient : MonoBehaviour {
 		}
 	}
 
-	void SendMessage()
-	{
-		if (room != null)
-		{
-			room.Send("schema");
-			room.Send("move_right", new CustomData()
-			{
-				integer = 100,
-				str = "Hello world!"
-			});
-		}
-		else
-		{
-			Debug.Log("Room is not connected!");
-		}
-	}
-
 	void OnStateChangeHandler (State state, bool isFirstState)
 	{
 		// Setup room first state
@@ -248,7 +219,7 @@ public class ColyseusClient : MonoBehaviour {
 		};
 	}
 
-	void OnEntityRemove(Entity entity, string key)
+	public void OnEntityRemove(Entity entity, string key)
 	{
 		GameObject cube;
 		entities.TryGetValue(entity, out cube);
@@ -257,7 +228,4 @@ public class ColyseusClient : MonoBehaviour {
 		entities.Remove(entity);
 	}
 
-	void OnApplicationQuit()
-	{
-	}
 }

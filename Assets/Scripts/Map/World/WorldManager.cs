@@ -203,8 +203,6 @@ public class WorldManager : MonoBehaviour
       g.GetComponent<MeshCollider>().enabled = false;
     }
     
-    Debug.Log(activeWorld.tiles.Count);
-
     if(combatManager != null)
     {
       CombatManager cm = combatManager.GetComponent<CombatManager>();
@@ -217,7 +215,6 @@ public class WorldManager : MonoBehaviour
         //place bedrock layer of blocks
         //generate heightmap from seed
         string s = "seedtestspeedtest";
-        Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
         bM.Populate(s);
     bM.BlockPlates(activeWorld, regularTileSet);
         //bM.Biomes();
@@ -1171,6 +1168,7 @@ public class WorldManager : MonoBehaviour
 
   World LoadWorld()
   {
+    Debug.Log("loading world");
     return BinaryHandler.ReadData<World>(World.cachePath);
   }
    

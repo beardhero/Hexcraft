@@ -515,6 +515,9 @@ namespace Colyseus.Schema
 
 		protected void TriggerChanges(OrderedDictionary allChanges)
 		{
+			if (refs == null)
+				return;
+				
 			foreach (object key in allChanges.Keys)
 			{
 				List<DataChange> changes = (List<DataChange>)allChanges[key];

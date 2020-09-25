@@ -22,7 +22,7 @@ public class BlockManager : MonoBehaviour
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 256;
+    public static int maxHeight = 1;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
@@ -64,7 +64,6 @@ public class BlockManager : MonoBehaviour
             }
             Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
             RaycastHit hit = new RaycastHit();
-            Debug.Log("ray range " + rayrange);
             if (Physics.Raycast(ray, out hit, rayrange))
             {
                 GameObject hitObject = hit.transform.gameObject;
@@ -98,7 +97,6 @@ public class BlockManager : MonoBehaviour
                             Debug.Log("max height exceeded");
                             return;
                         }
-                        Debug.Log("placing at height " + hb.blockHeight + 1);
 
                         blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight + 1, false, quarterBlock));
                         AddToPlate(hitObject, blocks.Count - 1);
@@ -896,7 +894,6 @@ public class BlockManager : MonoBehaviour
     }
     public void Populate(string seed)
     {
-        Debug.Log("GETTING INTO POPULATE");
         //set the surface heights
         heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
         foreach (int h in heightmap)
@@ -910,7 +907,6 @@ public class BlockManager : MonoBehaviour
     }
     public int[] GenerateHeightmap(byte[] seed)
     {
-        Debug.Log("seed length" + seed.Length);
         int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
 
         Perlin perlin = new Perlin();
@@ -968,6 +964,7 @@ public class BlockManager : MonoBehaviour
 
         int perl = BitConverter.ToInt32(seed, 0);
         perlin.Seed = perl;
+        // disable perlin caves
         PerlinCaves(perlin, f, l, p, amplitude, o, sc);
     }
 
@@ -1021,7 +1018,6 @@ public class BlockManager : MonoBehaviour
                 }
             }
         }
-        Debug.Log(pAvg / it);
     }
 
     public double GetPerlinForBlock(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)

@@ -19,7 +19,10 @@ public class GameManager : MonoBehaviour
   public static Camera cam;
   public static MainUI mainUI;
 
-  //For World
+  // Network
+  public static NetworkManager networkManager;
+
+  //World
   public static World currentWorld;
   public static GameObject worldManagerObj;
   public static WorldManager worldManager;
@@ -40,10 +43,7 @@ public class GameManager : MonoBehaviour
   
   void Update()
   {
-    if(Input.GetKeyDown(KeyCode.Return))
-    {
-      CapturePNG();
-    }
+    // Enter key remapped to chat
   }
   // *** Main Initializer ***
   void Awake ()
@@ -52,6 +52,8 @@ public class GameManager : MonoBehaviour
     cam = Camera.main;
     if (Camera.main)
       zoneCameraControls = Camera.main.GetComponent<ZoneViewCamera>();
+
+    networkManager = GameObject.Find("Network").GetComponent<NetworkManager>();
 
     // @TODO: Make these a singleton pattern
     //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone
