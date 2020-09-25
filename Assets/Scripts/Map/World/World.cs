@@ -440,7 +440,8 @@ public List<int> GetTilesInRadius(float radius, int origin)
   public int TileDistanceFromTo(int from, int to)
   { 
     //Just brute force it with GetTilesInRadius, expensive but simple solution
-    for(int r = 0; r <= 1000; r++)
+    //max radius 10
+    for(int r = 0; r <= 10; r++)
     {
       List<int> t = GetTilesInRadius(r,from);
       foreach(int i in t)
@@ -452,7 +453,7 @@ public List<int> GetTilesInRadius(float radius, int origin)
       }
     }
     Debug.Log("Couldn't find distance between " + from + " and " + to);
-    return 1000;
+    return 10;
   }
   
   public float AverageTileHeight()

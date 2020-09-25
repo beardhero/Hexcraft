@@ -42,7 +42,6 @@ Thumbs.db
 *.csprojAssemblyReference
 *.sln
 *.userprefs
-obj/
 Temp/
 Library/
 Assets/Animations/Animations.meta
