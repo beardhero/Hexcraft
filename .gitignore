@@ -50,3 +50,4 @@ Assets/Skyboxes
 .vs/
 .vscode/
 obj/
+build/
