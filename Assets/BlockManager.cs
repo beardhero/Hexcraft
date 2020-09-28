@@ -55,7 +55,7 @@ public class BlockManager : MonoBehaviour
         //plate update
 
         //placing inputs
-        if (Input.GetKeyDown(KeyCode.Mouse0))
+        /*if (Input.GetKeyDown(KeyCode.Mouse0))
         {
             bool quarterBlock = false;
             if (Input.GetKey(KeyCode.LeftShift))
@@ -167,11 +167,11 @@ public class BlockManager : MonoBehaviour
                             int nblock = blocksOnTile[b][blocks[blockInWorld].blockHeight];
 
                             RemoveFromPlate(plates[blocks[nblock].plate], nblock);
-                        }*/
+                        }
                     }
                 }//Dstroy(hit.transform.gameObject);}
             }
-        }
+        }*/
     }
 
     public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)

@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/WorldDuel.unity
-    guid: 150d7e18de1be9a428d8929e7158587b
+    path: Assets/MirrorPlayerTest.unity
+    guid: 4202cb0ce3a389b4f85d11c865aee7d9
   m_configObjects: {}

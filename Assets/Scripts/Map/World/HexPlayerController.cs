@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HexPlayerController : MonoBehaviour {
+public class HexPlayerController : Mirror.NetworkBehaviour {
 	Rigidbody rigbody;
 	Transform trans;
 	GameObject player;
@@ -45,137 +45,160 @@ public class HexPlayerController : MonoBehaviour {
     //public Runebook runeBook;
     // Use this for initialization
     void Start () {
-		player = this.gameObject;
-		trans = player.transform;
-        //initialTrans = trans;
-		head = GameObject.Find("Head").transform;
-		rigbody = GetComponent<Rigidbody>();
-		rigbody.useGravity = false;
-		rigbody.freezeRotation = true;
-		cam = Camera.main;
-		//wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
-		aW = WorldManager.activeWorld;
-		trans.position = aW.tiles[spawnTile].hexagon.center *10f;
-		origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
-		animator = player.GetComponent<Animator>();
-		animator.enabled = true;
-		animator.Play("Idle");
-		//runebook test
-		//byte[] b = new byte[32];
-		//for(int i = 0; i < 32; i++)
-		//{
-		//	b[i] = (byte)Random.Range(0,256);
-		//}
-		//runeBook = new Runebook(b);
-		//GameObject runebook = Instantiate(runeBook.RunebookGO());
-		 /* @TODO
-		Transform runebookTrans = runebook.transform;
-		runebookTrans.parent = cam.transform;
-		runebookTrans.position = cam.transform.position + cam.transform.forward;
-		runebookTrans.LookAt(cam.transform);
-		*/
-		//foreach(Rune r in runeBook.runes)
-		//{
-		//	Instantiate(r.RuneGO());
-		//}
+        if (isLocalPlayer)
+        {
+            player = gameObject;
+            trans = player.transform;
+            //initialTrans = trans;
+            head = gameObject.transform.GetChild(3);
+            rigbody = gameObject.GetComponent<Rigidbody>();
+            rigbody.useGravity = false;
+            rigbody.freezeRotation = true;
+            cam = gameObject.GetComponentInChildren<Camera>();
+            //wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
+            aW = WorldManager.activeWorld;
+            trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
+            origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
+            animator = player.GetComponent<Animator>();
+            animator.enabled = true;
+            animator.Play("Idle");
+            //runebook test
+            //byte[] b = new byte[32];
+            //for(int i = 0; i < 32; i++)
+            //{
+            //	b[i] = (byte)Random.Range(0,256);
+            //}
+            //runeBook = new Runebook(b);
+            //GameObject runebook = Instantiate(runeBook.RunebookGO());
+            /* @TODO
+           Transform runebookTrans = runebook.transform;
+           runebookTrans.parent = cam.transform;
+           runebookTrans.position = cam.transform.position + cam.transform.forward;
+           runebookTrans.LookAt(cam.transform);
+           */
+            //foreach(Rune r in runeBook.runes)
+            //{
+            //	Instantiate(r.RuneGO());
+            //}
+        }
+        else {
+            gameObject.GetComponent<Animator>().enabled = false;
+            gameObject.GetComponent<CapsuleCollider>().enabled = false;
+            Destroy(gameObject.GetComponent<Rigidbody>());
+            Destroy(gameObject.transform.GetChild(2).gameObject);
+            Destroy(gameObject.transform.GetChild(3).gameObject);
+            this.enabled = false;
+        }
 		
 	}
-	void Update()
-	{
-        /*float f = Input.GetAxis("Mouse ScrollWheel");
-        if (f > 0 || f < 0)
+    void Update()
+    {
+        if (isLocalPlayer)
         {
-            Vector3 v = cam.transform.position - head.position;
-            if (v.magnitude <= zoomMax && f < 0) { cam.transform.position -= f * v * camZoomStep; }
-            if (v.magnitude >= zoomMin && f > 0) { cam.transform.position -= f * v * camZoomStep; }
-        }*/
-        if (Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
-        {
-            numberOfJumps++;
-            jumped = true;
-            animator.Play("Levitate");
-            rigbody.AddForce(-gravityDir * jumpHeight);
-            //jumped = false;
-        }
-        if (numberOfJumps >= maxJumps)
-        {
-            canJump = false;
+            /*float f = Input.GetAxis("Mouse ScrollWheel");
+            if (f > 0 || f < 0)
+            {
+                Vector3 v = cam.transform.position - head.position;
+                if (v.magnitude <= zoomMax && f < 0) { cam.transform.position -= f * v * camZoomStep; }
+                if (v.magnitude >= zoomMin && f > 0) { cam.transform.position -= f * v * camZoomStep; }
+            }*/
+            if (Input.GetKeyDown(KeyCode.Space) && numberOfJumps < maxJumps)
+            {
+                numberOfJumps++;
+                jumped = true;
+                animator.Play("Levitate");
+                rigbody.AddForce(-gravityDir * jumpHeight);
+                //jumped = false;
+            }
+            if (numberOfJumps >= maxJumps)
+            {
+                canJump = false;
+            }
         }
     }
     // Update is called once per frame
     void FixedUpdate()
     {
-        //normalize down
-        gravityDir = (origin - trans.position).normalized;
-        trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
-        //gravity
-        rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
-
-        if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
+        if (isLocalPlayer)
         {
-            animator.Play("Idle");
-        }
+            //normalize down
+            gravityDir = (origin - trans.position).normalized;
+            trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
+            //gravity
+            rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
 
-        float vert = Input.GetAxis("Vertical");
-        if (vert != 0)
-        {
-            rigbody.velocity += trans.forward * vert * walkSpeed;
-            animator.Play("Walk");
-        }
+            if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
+            {
+                animator.Play("Idle");
+            }
 
-        float horz = Input.GetAxis("Horizontal");
-        if (horz != 0)
-        {
-            //rigbody.velocity += -trans.right * vert * walkSpeed;
-            trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
-            animator.Play("Walk");
-        }
-        
-        //cam.transform.RotateAround(head.position.normalized, gravityDir.normalized, -camRotateSpeed * Input.GetAxis("Mouse X"));
-        trans.RotateAround(trans.up, gravityDir, -camRotateSpeed * Input.GetAxis("Mouse X")); 
-        
-        //if (Vector3.Dot(head.position, cam.transform.forward) >= rotationApex) { 
+            float vert = Input.GetAxis("Vertical");
+            if (vert != 0)
+            {
+                rigbody.velocity += trans.forward * vert * walkSpeed;
+                animator.Play("Walk");
+            }
+
+            float horz = Input.GetAxis("Horizontal");
+            if (horz != 0)
+            {
+                //rigbody.velocity += -trans.right * vert * walkSpeed;
+                trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
+                animator.Play("Walk");
+            }
+
+            //cam.transform.RotateAround(head.position.normalized, gravityDir.normalized, -camRotateSpeed * Input.GetAxis("Mouse X"));
+            trans.RotateAround(trans.up, gravityDir, -camRotateSpeed * Input.GetAxis("Mouse X"));
+
+            //if (Vector3.Dot(head.position, cam.transform.forward) >= rotationApex) { 
             //cam.transform.RotateAround(cam.transform.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y")); 
-        //}
-        //Debug.Log(Vector3.Dot(head.position.normalized, cam.transform.forward.normalized));
-        float camDot = Vector3.Dot(head.position.normalized, cam.transform.forward.normalized);
-        if ( (camDot <= .9 && Input.GetAxis("Mouse Y") > 0) || (camDot >= -.9 && Input.GetAxis("Mouse Y") < 0)){
-            cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
+            //}
+            //Debug.Log(Vector3.Dot(head.position.normalized, cam.transform.forward.normalized));
+            float camDot = Vector3.Dot(head.position.normalized, cam.transform.forward.normalized);
+            if ((camDot <= .9 && Input.GetAxis("Mouse Y") > 0) || (camDot >= -.9 && Input.GetAxis("Mouse Y") < 0))
+            {
+                cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
+            }
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                //reset cam rot
+                cam.transform.rotation = Quaternion.identity;
+            }
+            //adjust scale, jumpheight, movespeed
+            float mag = trans.position.magnitude;
+            trans.localScale = Vector3.one * mag * scaleScaleFactor;
+            gravityScale = mag * gravityScaleFactor;
+            jumpHeight = mag * jumpScaleFactor;
+            walkSpeed = mag * walkScaleFactor;
+            runSpeed = mag * walkScaleFactor;
+            zoomMax = mag * zoomFactor;
+            //zoomMin = mag * zoomFactor;
+            BlockManager.rayrange = mag * rayScaleFactor;
         }
-        if (Input.GetKeyDown(KeyCode.V)) {
-            //reset cam rot
-            cam.transform.rotation = Quaternion.identity;
-        }
-        //adjust scale, jumpheight, movespeed
-        float mag = trans.position.magnitude;
-        trans.localScale = Vector3.one * mag * scaleScaleFactor;
-        gravityScale = mag * gravityScaleFactor;
-        jumpHeight = mag * jumpScaleFactor;
-        walkSpeed = mag * walkScaleFactor;
-        runSpeed = mag * walkScaleFactor;
-        zoomMax = mag * zoomFactor;
-        //zoomMin = mag * zoomFactor;
-        BlockManager.rayrange = mag * rayScaleFactor;
-
     }
 	void OnCollisionEnter(Collision collision)
 	{
-		if(numberOfJumps > 0)
-		{
-			numberOfJumps = 0;
-            if (jumped)
+        if (isLocalPlayer)
+        {
+            if (numberOfJumps > 0)
             {
-                jumped = false;
-                canJump = true;
+                numberOfJumps = 0;
+                if (jumped)
+                {
+                    jumped = false;
+                    canJump = true;
+                }
             }
-		}
+        }
         //animator.Play("Idle");
-	}   
-    
-	void OnCollisionStay(Collision collision)
-	{
-        numberOfJumps = 0;
-		canJump = true;
-        jumped = false;
+	}
+
+    void OnCollisionStay(Collision collision)
+    {
+        if (isLocalPlayer){
+            numberOfJumps = 0;
+            canJump = true;
+            jumped = false; 
+        }
 	}
 }
