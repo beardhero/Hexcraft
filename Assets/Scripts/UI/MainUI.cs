@@ -6,19 +6,24 @@ using UnityEngine.EventSystems;
 public class MainUI : MonoBehaviour
 {
   public GameObject host_joinPanel, chatPanel;
-  public Transform scrollviewTrans;
+  public RectTransform chatAnchorTrans;
   public Button dummyButton;
   public InputField chatField;
   public Text chatmessagePrefab;
   Animator host_joinAnim, chatAnim;
   bool chatOpen;
+  float chatScrollOffset = 0f;
   private void Start() {
     host_joinAnim = host_joinPanel.GetComponent<Animator>();
     chatAnim = chatPanel.GetComponent<Animator>();
   }
   
   public void OnChatReceived(string msg){
-    Text newMsg = Instantiate(chatmessagePrefab, scrollviewTrans);
+    Text newMsg = Instantiate(chatmessagePrefab, chatAnchorTrans);
+    newMsg.transform.SetParent(chatAnchorTrans);
+    newMsg.transform.localPosition = Vector3.up * chatScrollOffset;    // Seems like it just needs a 20pt offset idk
+    chatScrollOffset -= 25;
+    chatAnchorTrans.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, chatScrollOffset *-1);
     newMsg.text = msg;
   }
 
