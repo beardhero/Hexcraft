@@ -117,7 +117,7 @@ public class ColyseusClient : MonoBehaviour {
 		/*
 		 * Connect into Colyeus Server
 		 */
-		client = ColyseusManager.Instance.CreateClient(endpoint);
+		client = ColyseusManager.Instance.CreateClient("http://"+endpoint);
 
 		await client.Auth.Login();
 

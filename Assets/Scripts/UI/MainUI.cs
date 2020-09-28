@@ -13,6 +13,7 @@ public class MainUI : MonoBehaviour
   Animator host_joinAnim, chatAnim;
   bool chatOpen;
   float chatScrollOffset = 0f;
+  
   private void Start() {
     host_joinAnim = host_joinPanel.GetComponent<Animator>();
     chatAnim = chatPanel.GetComponent<Animator>();
@@ -61,12 +62,12 @@ public class MainUI : MonoBehaviour
   }
 
   public void OnClickJoin(Text text){  // Called by Join Button gameobject
-    GameManager.networkManager.OnJoinServer(text.text);
+    GameManager.networkManager.OnJoinServer(text.text!=""?text.text:"ws://localhost:2567");
     host_joinAnim.SetBool("host-join open", false);
   }
   
   public void OnHostServer(Text text){  // Called by Host Button gameobject
-    GameManager.networkManager.OnHostServer(text.text);
+    GameManager.networkManager.OnHostServer(text.text!=""?text.text:"ws://localhost:2567");
     host_joinAnim.SetBool("host-join open", false);
   }
 
