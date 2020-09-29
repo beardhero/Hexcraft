@@ -5,9 +5,10 @@ using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using System.IO;
 using Mirror;
+
 public enum RelativityState {None, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
-public class GameManager : NetworkBehaviour
+public class GameManager : MonoBehaviour
 {
   // === Const & Inspector Cache ===
   public RelativityState beginningState = RelativityState.WorldMap;
@@ -38,19 +39,46 @@ public class GameManager : NetworkBehaviour
   public static GameObject combatManagerObj;
   public static CombatManager combatManager;
   public static RoundManager roundManager;
-  
-  void Update()
-  {
-    if(Input.GetKeyDown(KeyCode.Return))
+
+    //World Networking
+    public GameObject blockPrefab;
+    public void ClientConnect()
     {
-      //CapturePNG();
+        ClientScene.RegisterPrefab(blockPrefab);
+        NetworkClient.RegisterHandler<ConnectMessage>(OnClientConnect);
+        NetworkClient.Connect("localhost");
     }
-  }
-    // *** Main Initializer ***
-    public override void OnStartServer()
+
+    void OnClientConnect(NetworkConnection conn, ConnectMessage msg)
     {
-        Debug.Log("jesus fucking christ");
-    myTrans = transform;
+        Debug.Log("Connected to server: " + conn);
+    }
+
+    public void ServerListen()
+    {
+        NetworkServer.RegisterHandler<ConnectMessage>(OnServerConnect);
+        NetworkServer.RegisterHandler<ReadyMessage>(OnClientReady);
+
+        // start listening, and allow up to 4 connections
+        NetworkServer.Listen(4);
+    }
+
+    // When client is ready spawn a few trees  
+    void OnClientReady(NetworkConnection conn, ReadyMessage msg)
+    {
+        Debug.Log("Client is ready to start: " + conn);
+        NetworkServer.SetClientReady(conn);
+        //Init();
+    }
+
+    void OnServerConnect(NetworkConnection conn, ConnectMessage msg)
+    {
+        Debug.Log("New client connected: " + conn);
+    }
+    // *** Main Initializer ***
+    void Start()
+  {
+        myTrans = transform;
 
     // @TODO: Make these a singleton pattern
     //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone

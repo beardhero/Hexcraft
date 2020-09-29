@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
-public class HexPlayerController : Mirror.NetworkBehaviour {
+public class HexPlayerController : NetworkBehaviour {
 	Rigidbody rigbody;
 	Transform trans;
 	GameObject player;
@@ -13,8 +14,8 @@ public class HexPlayerController : Mirror.NetworkBehaviour {
 	World aW;
 	Vector3 origin;
 	Animator animator;
-	//float currentHeight = 0;
-	//float testH = 0;
+
+    public BlockManager blockman;
 	public float gravityScale = 0;
 	public float walkSpeed = 0;
 	public float runSpeed = 0;
@@ -26,7 +27,6 @@ public class HexPlayerController : Mirror.NetworkBehaviour {
     public float walkScaleFactor = .12f;
     public float rayScaleFactor = 1f;
     public float zoomFactor = .24f;
-   
 	public bool canJump;
 	public bool jumped;
 	public int numberOfJumps;
@@ -60,6 +60,7 @@ public class HexPlayerController : Mirror.NetworkBehaviour {
             animator = player.GetComponent<Animator>();
             animator.enabled = true;
             animator.Play("Idle");
+            blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
             //trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
             //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
            
@@ -96,6 +97,22 @@ public class HexPlayerController : Mirror.NetworkBehaviour {
     {
         if (isLocalPlayer)
         {
+            if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                Debug.Log(blockman);
+                Debug.Log(cam.transform);
+                Vector3 rp = cam.gameObject.transform.position;
+                Vector3 rf = cam.gameObject.transform.forward;
+                blockman.CmdRayPlaceBlock(rp, rf);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Mouse1))
+            {
+                Vector3 rp = cam.gameObject.transform.position;
+                Vector3 rf = cam.gameObject.transform.forward;
+                blockman.CmdRayRemoveBlock(rp, rf);
+            }
+
             /*float f = Input.GetAxis("Mouse ScrollWheel");
             if (f > 0 || f < 0)
             {

@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using Mirror;
 
-public class BlockManager : MonoBehaviour
+public class BlockManager : NetworkBehaviour
 {
     public static List<HexBlock> blocks;
     public static List<GameObject> plates;
@@ -23,7 +23,7 @@ public class BlockManager : MonoBehaviour
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 1;
+    public static int maxHeight = 6;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
@@ -34,145 +34,112 @@ public class BlockManager : MonoBehaviour
     //private static float _blockScaleFactor = 0.1f;
     //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
 
-    //public TileSet tileSet;
-    // Start is called before the first frame update
-    void Start()
-    {
-        //playerTrans = GameObject.FindGameObjectWithTag("Player").transform;
-        //blockScaleFactor /= WorldManager.worldSubdivisions;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        /*
-        updateTimer += Time.deltaTime;
-        //texture animation
-        if (updateTimer >= updateStep)
+    [Command(ignoreAuthority = true)]
+    public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor) {
+        Debug.Log("placing");
+        bool quarterBlock = false;
+        if (Input.GetKey(KeyCode.LeftShift))
         {
-            ChangeType(blocks[0], blocks[0].type);
-            updateTimer = 0;
-        }*/
-        //plate update
-
-        //placing inputs
-        /*if (Input.GetKeyDown(KeyCode.Mouse0))
+            quarterBlock = true;
+        }
+        Ray ray = new Ray(rayPos, rayFor);
+        RaycastHit hit = new RaycastHit();
+        Debug.Log("ray range " + rayrange);
+        if (Physics.Raycast(ray, out hit, rayrange))
         {
-            bool quarterBlock = false;
-            if (Input.GetKey(KeyCode.LeftShift))
+            GameObject hitObject = hit.transform.gameObject;
+            BlockInfo info = hitObject.GetComponent<BlockInfo>();
+            //Debug.Log(tri);
+            if (info != null)
             {
-                quarterBlock = true;
-            }
-            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-            RaycastHit hit = new RaycastHit();
-            Debug.Log("ray range " + rayrange);
-            if (Physics.Raycast(ray, out hit, rayrange))
-            {
-                GameObject hitObject = hit.transform.gameObject;
-                BlockInfo info = hitObject.GetComponent<BlockInfo>();
-                //Debug.Log(tri);
-                if (info != null)
+                //Find block we hit
+                int tri = hit.triangleIndex;// % 24;
+                int blockIndex = tri / 24;
+
+                HexBlock hb = blocks[info.blockIndexes[blockIndex]];
+                //Debug.Log(info.blockIndexes[blockIndex]);
+                HexTile tile = WorldManager.activeWorld.tiles[hb.tileIndex];
+                tri = tri % 24;
+
+                if (info.blockIndexes.Count >= maxBlocks)
                 {
-                    //Find block we hit
-                    int tri = hit.triangleIndex;// % 24;
-                    int blockIndex = tri / 24;
+                    Debug.Log("Mana full");
+                    return;
+                }
+                //float h = hb.height;
+                //float bH = h - (h * blockScaleFactor);
 
-                    HexBlock hb = blocks[info.blockIndexes[blockIndex]];
-                    //Debug.Log(info.blockIndexes[blockIndex]);
-                    HexTile tile = WorldManager.activeWorld.tiles[hb.tileIndex];
-                    tri = tri % 24;
+                if (tri < 6) //top
+                {
 
-                    if (info.blockIndexes.Count >= maxBlocks)
+                    //Debug.Log("Placing Top  " + tri);
+                    if (hb.blockHeight + 1 >= maxHeight)
                     {
-                        Debug.Log("Mana full");
+                        Debug.Log("max height exceeded");
                         return;
                     }
-                    //float h = hb.height;
-                    //float bH = h - (h * blockScaleFactor);
+                    Debug.Log("placing at height " + hb.blockHeight + 1);
 
-                    if (tri < 6) //top
+                    blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight + 1, false, quarterBlock));
+                    AddToPlate(hitObject, blocks.Count - 1);
+                }
+                if (tri >= 6 && tri < 12) //bot
+                {
+                    //Debug.Log("Placing Bot  " + tri);
+                    if (hb.blockHeight - 1 < 0)
                     {
-
-                        //Debug.Log("Placing Top  " + tri);
-                        if (hb.blockHeight + 1 >= maxHeight)
-                        {
-                            Debug.Log("max height exceeded");
-                            return;
-                        }
-                        Debug.Log("placing at height " + hb.blockHeight + 1);
-
-                        blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight + 1, false, quarterBlock));
-                        AddToPlate(hitObject, blocks.Count - 1);
+                        Debug.Log("min height exceeded");
+                        return;
                     }
-                    if (tri >= 6 && tri < 12) //bot
+                    blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight - 1, false, quarterBlock));
+                    AddToPlate(hitObject, blocks.Count - 1);
+                }
+                if (tri >= 12 && tri < 24) //side
+                {
+                    //get neighbor
+                    Vector3 point = hit.point;
+                    HexTile n = WorldManager.activeWorld.tiles[tile.neighbors[0]];
+                    Vector3 cand = point - (Vector3)n.hexagon.center;
+                    float check = cand.magnitude;
+                    for (int i = 1; i < tile.neighbors.Count; i++)
                     {
-                        //Debug.Log("Placing Bot  " + tri);
-                        if (hb.blockHeight - 1 < 0)
+                        HexTile nt = WorldManager.activeWorld.tiles[tile.neighbors[i]];
+                        float nextCheck = (point - (Vector3)nt.hexagon.center).magnitude;
+                        if (nextCheck < check)
                         {
-                            Debug.Log("min height exceeded");
-                            return;
+                            n = nt;
+                            check = nextCheck;
                         }
-                        blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight - 1, false, quarterBlock));
-                        AddToPlate(hitObject, blocks.Count - 1);
                     }
-                    if (tri >= 12 && tri < 24) //side
-                    {
-                        //get neighbor
-                        Vector3 point = hit.point;
-                        HexTile n = WorldManager.activeWorld.tiles[tile.neighbors[0]];
-                        Vector3 cand = point - (Vector3)n.hexagon.center;
-                        float check = cand.magnitude;
-                        for (int i = 1; i < tile.neighbors.Count; i++)
-                        {
-                            HexTile nt = WorldManager.activeWorld.tiles[tile.neighbors[i]];
-                            float nextCheck = (point - (Vector3)nt.hexagon.center).magnitude;
-                            if (nextCheck < check)
-                            {
-                                n = nt;
-                                check = nextCheck;
-                            }
-                        }
-                        blocks.Add(CreateBlock(n, toPlace, hb.blockHeight, false, quarterBlock));
-                        AddToPlate(plates[n.plate], blocks.Count - 1);
-                    }
+                    blocks.Add(CreateBlock(n, toPlace, hb.blockHeight, false, quarterBlock));
+                    AddToPlate(plates[n.plate], blocks.Count - 1);
                 }
             }
         }
+    }
 
-        if (Input.GetKeyDown(KeyCode.Mouse1))
+    [Command(ignoreAuthority = true)]
+    public void CmdRayRemoveBlock(Vector3 rayPos, Vector3 rayFor) {
+        Debug.Log("removing");
+        Ray ray = new Ray(rayPos, rayFor);
+        RaycastHit hit = new RaycastHit();
+        if (Physics.Raycast(ray, out hit, rayrange))
         {
-            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-            RaycastHit hit = new RaycastHit();
+            GameObject hitObject = hit.transform.gameObject;
+            BlockInfo info = hitObject.GetComponent<BlockInfo>();
+            //Find block we hit
+            int tri = hit.triangleIndex;// % 24;
+            int blockInPlate = tri / 24;
 
-            if (Physics.Raycast(ray, out hit, rayrange))
+            if (info != null)
             {
-                GameObject hitObject = hit.transform.gameObject;
-                BlockInfo info = hitObject.GetComponent<BlockInfo>();
-                //Find block we hit
-                int tri = hit.triangleIndex;// % 24;
-                int blockInPlate = tri / 24;
-
-                if (info != null)
+                int blockInWorld = info.blockIndexes[blockInPlate];
+                if (!blocks[blockInWorld].unbreakable)
                 {
-                    int blockInWorld = info.blockIndexes[blockInPlate];
-                    if (!blocks[blockInWorld].unbreakable)
-                    {
-                        //Debug.Log("removing from world " + blockInWorld);
-                        //Debug.Log("removing from plate " + blockInPlate);
-                        //Debug.Log("hit tri " + tri);
-                        RemoveFromPlate(hitObject, blockInWorld);
-                        //neighbor test
-                        //Debug.Log("block tile index " + blocks[blockInWorld].tileIndex);
-                        /*foreach (int b in WorldManager.activeWorld.tiles[blocks[blockInWorld].tileIndex].neighbors)
-                        {
-                            int nblock = blocksOnTile[b][blocks[blockInWorld].blockHeight];
-
-                            RemoveFromPlate(plates[blocks[nblock].plate], nblock);
-                        }
-                    }
-                }//Dstroy(hit.transform.gameObject);}
+                    RemoveFromPlate(hitObject, blockInWorld);
+                }
             }
-        }*/
+        }
     }
 
     public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
@@ -234,7 +201,7 @@ public class BlockManager : MonoBehaviour
 
     public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
     {
-        GameObject output = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
+        GameObject output = NetworkManager.Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
         NetworkServer.Spawn(output);
 
         output.layer = 0;
