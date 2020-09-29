@@ -117,15 +117,16 @@ public class ColyseusClient : MonoBehaviour {
 		/*
 		 * Connect into Colyeus Server
 		 */
-		client = ColyseusManager.Instance.CreateClient("http://"+endpoint);
+		client = ColyseusManager.Instance.CreateClient(endpoint);
 
-		await client.Auth.Login();
+		//await client.Auth.Login();
 
 		//var friends = await client.Auth.GetFriends();
 
 		// Update username
-		client.Auth.Username = "Jake";
-		await client.Auth.Save();
+		//client.Auth.Username = "Jake";
+		//await client.Auth.Save();
+		Debug.Log("getting to join stage");
 		JoinOrCreateRoom();
 	}
 
@@ -139,6 +140,7 @@ public class ColyseusClient : MonoBehaviour {
 
 	public async void JoinOrCreateRoom()
 	{
+		// Failing here
 		room = await client.JoinOrCreate<State>(roomName, new Dictionary<string, object>() { });
 		RegisterRoomHandlers();
 		Debug.Log("finished join or create");

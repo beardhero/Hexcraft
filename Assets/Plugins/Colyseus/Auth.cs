@@ -107,6 +107,7 @@ namespace Colyseus
 
 		public async Task<Auth> Login(/* anonymous */)
 		{
+			// @Todo, fix this
 			return await Login(HttpUtility.ParseQueryString(string.Empty));
 		}
 

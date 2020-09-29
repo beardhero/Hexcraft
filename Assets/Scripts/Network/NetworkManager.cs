@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 public class NetworkManager : MonoBehaviour
 {
-    private System.Diagnostics.Process process1 = null, process2 = null;
-    bool isRunningMongo, isRunningColy;
+    private System.Diagnostics.Process mongoProcess = null, colyProcess = null, mongoKillProcess = null;
+    bool isRunningMongo = false, isRunningColy = false;
 	bool isServerHost;
 	ColyseusClient client;
 	MainUI ui;
@@ -29,12 +29,17 @@ public class NetworkManager : MonoBehaviour
 		}
 	}
 
-    public void OnHostServer(string endpoint) 
+    public async Task<bool> OnHostServer(string endpoint) 
 	{
+		Debug.Log("launching server");
         LaunchMongoAndColyseus();
 		isServerHost = true;
-		// @TODO: verify textObject.text is a valid url
+		await Task.Delay(1500);
+		Debug.Log("Joining the server");
+		// @TODO: verify textObject.text is a valid url it needs http:// and a trailing /
 		client.ConnectToServer(endpoint);
+
+		return true;
     }
 
     public void OnJoinServer(string endpoint) 
@@ -63,24 +68,24 @@ public class NetworkManager : MonoBehaviour
 			string[] mongoPathParts = {Application.streamingAssetsPath, "Server", "MongoDB", "Server", "4.0", "bin", "mongod.exe"};
 			string mongoBinPath = Path.Combine(mongoPathParts);      // afaik Combine() can only take 4 strings or else an array
 
-			process1 = new System.Diagnostics.Process();
-			process1.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-			process1.StartInfo.FileName = mongoBinPath;
-			process1.StartInfo.Arguments = "--dbpath=\""+dbPath+"\""; // Note the importance of encapsulating the dbPath in quotes in order to preserve spaces in filenames and folders
-			process1.StartInfo.UseShellExecute = false;
-			process1.EnableRaisingEvents = true;
-			process1.Exited += OnExitMongo;
+			mongoProcess = new System.Diagnostics.Process();
+			mongoProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+			mongoProcess.StartInfo.FileName = mongoBinPath;
+			mongoProcess.StartInfo.Arguments = "--dbpath=\""+dbPath+"\""; // Note the importance of encapsulating the dbPath in quotes in order to preserve spaces in filenames and folders
+			mongoProcess.StartInfo.UseShellExecute = false;
+			mongoProcess.EnableRaisingEvents = true;
+			mongoProcess.Exited += OnExitMongo;
 			if (windowless)
 			{
-				process1.StartInfo.CreateNoWindow = true;
-				process1.StartInfo.RedirectStandardOutput = true;
-				process1.StartInfo.RedirectStandardError = true;
-				process1.OutputDataReceived += MongoOnOutputData;
-				process1.ErrorDataReceived += MongoOnOutputData;
+				mongoProcess.StartInfo.CreateNoWindow = true;
+				mongoProcess.StartInfo.RedirectStandardOutput = true;
+				mongoProcess.StartInfo.RedirectStandardError = true;
+				mongoProcess.OutputDataReceived += MongoOnOutputData;
+				mongoProcess.ErrorDataReceived += MongoOnOutputData;
 			}
-			process1.Start();
-			process1.BeginOutputReadLine();
-			process1.BeginErrorReadLine();
+			mongoProcess.Start();
+			mongoProcess.BeginOutputReadLine();
+			mongoProcess.BeginErrorReadLine();
 			isRunningMongo = true;
 		}
 
@@ -95,25 +100,25 @@ public class NetworkManager : MonoBehaviour
 			string npmBinPath = Path.Combine(nodePathParts);
 			string appEntryPoint = Path.Combine(new[] {Application.streamingAssetsPath, "Server", "node_modules", "ts-node", "dist"});
 
-			process2 = new System.Diagnostics.Process();
-			process2.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-			process2.StartInfo.FileName = npmBinPath;
-			process2.StartInfo.Arguments = "bin.js ../../../index.ts";
-			process2.StartInfo.WorkingDirectory = appEntryPoint;
-			process2.StartInfo.UseShellExecute = false;
-			process2.EnableRaisingEvents = true;
-			process2.Exited += OnExitColy;
-			process2.StartInfo.RedirectStandardInput = true;
+			colyProcess = new System.Diagnostics.Process();
+			colyProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+			colyProcess.StartInfo.FileName = npmBinPath;
+			colyProcess.StartInfo.Arguments = "bin.js ../../../index.ts";
+			colyProcess.StartInfo.WorkingDirectory = appEntryPoint;
+			colyProcess.StartInfo.UseShellExecute = false;
+			colyProcess.EnableRaisingEvents = true;
+			colyProcess.Exited += OnExitColy;
+			colyProcess.StartInfo.RedirectStandardInput = true;
 			if (windowless){
-				process2.StartInfo.CreateNoWindow = true;
-				process2.StartInfo.RedirectStandardOutput = true;
-				process2.StartInfo.RedirectStandardError = true;
-				process2.OutputDataReceived += ColyOnOutputData;
-				process2.ErrorDataReceived += ColyOnOutputData;
+				colyProcess.StartInfo.CreateNoWindow = true;
+				colyProcess.StartInfo.RedirectStandardOutput = true;
+				colyProcess.StartInfo.RedirectStandardError = true;
+				colyProcess.OutputDataReceived += ColyOnOutputData;
+				colyProcess.ErrorDataReceived += ColyOnOutputData;
 			}
-			process2.Start();
-			process2.BeginOutputReadLine();
-			process2.BeginErrorReadLine();
+			colyProcess.Start();
+			colyProcess.BeginOutputReadLine();
+			colyProcess.BeginErrorReadLine();
 
 			isRunningColy = true;
 		}
@@ -134,9 +139,15 @@ public class NetworkManager : MonoBehaviour
 		if (!isRunningMongo)
 			return;
 
-		process1.CloseMainWindow();
-		//process1.Kill();
-		process1.Dispose();
+		mongoKillProcess = new System.Diagnostics.Process();
+		//mongoKillProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+		mongoKillProcess.StartInfo.FileName = Path.Combine(Application.streamingAssetsPath, "Server", "MongoDB", "Server", "4.0", "bin", "mongo.exe");		// Mongo, not Mongod as above
+		mongoKillProcess.StartInfo.Arguments = "--eval \"db.getSiblingDB('admin').shutdownServer()\"";
+		//mongoKillProcess.StartInfo.UseShellExecute = false;
+		mongoKillProcess.Start();
+		Task.Delay(500).Wait();
+		mongoKillProcess.Kill();
+		mongoKillProcess.Dispose();
 		isRunningMongo = false;
 	}
 
@@ -145,9 +156,9 @@ public class NetworkManager : MonoBehaviour
 		if (!isRunningColy)
 			return;
 
-		process2.CloseMainWindow();
-		//process1.Kill();
-		process2.Dispose();
+		colyProcess.CloseMainWindow();
+		//colyProcess.Kill();
+		colyProcess.Dispose();
 
 		isRunningColy = false;
 	}
@@ -171,16 +182,16 @@ public class NetworkManager : MonoBehaviour
     void OnExitMongo(object sender, System.EventArgs e)
 	{
 		isRunningMongo = false;
-		if (process1.ExitCode != 0) {
-			Debug.LogError("MongoDB Error! Exit Code: " + process1.ExitCode);
+		if (mongoProcess.ExitCode != 0) {
+			Debug.LogError("MongoDB Error! Exit Code: " + mongoProcess.ExitCode);
 		}
 	}
 
 	void OnExitColy(object sender, System.EventArgs e)
 	{
 		isRunningColy = false;
-		if (process2.ExitCode != 0) {
-			Debug.LogError("Colyseus Error! Exit Code: " + process2.ExitCode);
+		if (colyProcess.ExitCode != 0) {
+			Debug.LogError("Colyseus Error! Exit Code: " + colyProcess.ExitCode);
 		}
 	}
 }

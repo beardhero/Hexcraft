@@ -59,8 +59,10 @@ namespace Colyseus
 		/// </param>
 		public Client (string endpoint)
 		{
+			Debug.Log("client initialize: "+endpoint);
 			Endpoint = new UriBuilder(new Uri (endpoint));
 			Auth = new Auth(Endpoint.Uri);
+			Debug.Log("after uribuilder: "+Endpoint.Uri);
 		}
 
 		/**
@@ -206,6 +208,7 @@ namespace Colyseus
 			}
 
 			var uriBuilder = new UriBuilder(Endpoint.Uri);
+			Debug.Log("After second uribuilder: "+uriBuilder);
 			uriBuilder.Path += "matchmake/" + method + "/" + roomName;
 			uriBuilder.Scheme = uriBuilder.Scheme.Replace("ws", "http"); // FIXME: replacing "ws" with "http" is too hacky!
 
@@ -213,6 +216,7 @@ namespace Colyseus
 			req.method = "POST";
 
 			req.url = uriBuilder.Uri.ToString();
+			Debug.Log(req.url);
 
 			// Send JSON options on request body
 			var jsonBodyStream = new MemoryStream();

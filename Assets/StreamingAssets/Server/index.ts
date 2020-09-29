@@ -40,4 +40,4 @@ app.get("/something", function (req, res) {
 // Listen on specified PORT number
 gameServer.listen(PORT);
 
-console.log("Running on ws://localhost:" + PORT);
+console.log("Node process running on ws://localhost:" + PORT);
