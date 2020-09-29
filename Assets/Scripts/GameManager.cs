@@ -4,9 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using System.IO;
+using Mirror;
 public enum RelativityState {None, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
   // === Const & Inspector Cache ===
   public RelativityState beginningState = RelativityState.WorldMap;
@@ -42,16 +43,14 @@ public class GameManager : MonoBehaviour
   {
     if(Input.GetKeyDown(KeyCode.Return))
     {
-      CapturePNG();
+      //CapturePNG();
     }
   }
-  // *** Main Initializer ***
-  void Awake ()
-  {
+    // *** Main Initializer ***
+    public override void OnStartServer()
+    {
+        Debug.Log("jesus fucking christ");
     myTrans = transform;
-    cam = Camera.main;
-    if (Camera.main)
-      zoneCameraControls = Camera.main.GetComponent<ZoneViewCamera>();
 
     // @TODO: Make these a singleton pattern
     //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone
@@ -185,9 +184,6 @@ public class GameManager : MonoBehaviour
         }
         */
         byte[] bytes = tex.EncodeToPNG ();
-
-
-
         File.WriteAllBytes ("Assets/Cards/card.png", bytes);
   }
 

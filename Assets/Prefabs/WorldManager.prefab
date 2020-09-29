@@ -4,7 +4,8 @@
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
   - component: {fileID: 465024}
@@ -20,112 +21,66 @@ GameObject:
   m_IsActive: 1
 --- !u!4 &465024
 Transform:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 177840}
-  m_LocalRotation: {x: 0.017129246, y: -0.76237524, z: -0.18019204, w: 0.62130624}
+  m_LocalRotation: {x: 0.01712601, y: -0.7623758, z: -0.18019445, w: 0.6213049}
   m_LocalPosition: {x: 100, y: 0, z: 0}
   m_LocalScale: {x: 0.001, y: 0.001, z: 0.001}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &11423006
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 177840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9895b6bcf9fcf34b8d670645c4b910d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  worldPrefab: {fileID: 124366, guid: e32e99e140d8e4043946127d027758f8, type: 2}
-  tileWidth: 100
-  tileHeight: 100
-  tileCountW: 21
-  tileCountH: 21
-  hexagonal: 1
---- !u!114 &11435054
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 177840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab2caf6f5ac35491fa6202a9ae29ab24, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scale: 10
-  subdivisions: 4
+  m_LocalEulerAnglesHint: {x: -14.683001, y: -99.702, z: -14.979001}
 --- !u!114 &11437394
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 177840}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ba8eb31765146f44b4c7afb0152d17e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textMeshPrefab: {fileID: 429764, guid: 6a39ddbcc9eca4aa9a71bc26fe7788ad, type: 2}
-  activeWorld:
-    state: 
-    name: Home
-    size: 1
-    type: 1
-    season: 1
-    tilt: 1
-    element: 0
-    glyphProb: 0.01
-    origin:
-      x: 0
-      y: 0
-      z: 0
-    circumferenceInTiles: 0
-    circumference: 0
-    radius: 0
-    numberOfPlates: 0
-    seaLevel: 0
-    tiles: []
-    triTiles: []
-    pentagons: []
+  player: {fileID: 0}
+  worldCaptureName: 
+  activeTex: {fileID: 8400000, guid: 0ca904eeaa24a994491224d448140971, type: 2}
+  combatManager: {fileID: 0}
   regularTileSet:
-    texture: {fileID: 2800000, guid: 3fbef6d0b7989b948863257c23f6b2c7, type: 3}
-    tileWidth: 100
-    tileHeight: 100
+    texture: {fileID: 2800000, guid: 6d3dc6206d7327140af08603cf20501b, type: 3}
+    tileWidth: 512
+    tileHeight: 443
     typeUVs:
     - type: 6
       minCoord:
         x: 5
-        y: 3
+        y: 0
       maxCoord:
         x: 5
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 3
       minCoord:
         x: 2
-        y: 3
+        y: 0
       maxCoord:
         x: 2
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 4
       minCoord:
         x: 3
-        y: 5
+        y: 0
       maxCoord:
         x: 3
-        y: 5
+        y: 7
       sideCoord:
         x: 0
         y: 0
@@ -135,114 +90,114 @@ MonoBehaviour:
         y: 0
       maxCoord:
         x: 4
-        y: 0
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 2
       minCoord:
         x: 1
-        y: 1
+        y: 0
       maxCoord:
         x: 1
-        y: 1
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 7
       minCoord:
         x: 6
-        y: 3
+        y: 0
       maxCoord:
         x: 6
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 1
       minCoord:
         x: 0
-        y: 3
+        y: 0
       maxCoord:
         x: 0
-        y: 3
+        y: 10
       sideCoord:
         x: 0
         y: 0
     - type: 8
       minCoord:
         x: 7
-        y: 3
+        y: 0
       maxCoord:
         x: 7
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 9
       minCoord:
         x: 8
-        y: 3
+        y: 0
       maxCoord:
         x: 8
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 12
       minCoord:
         x: 9
-        y: 3
+        y: 0
       maxCoord:
         x: 9
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 13
       minCoord:
         x: 10
-        y: 3
+        y: 0
       maxCoord:
         x: 10
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 10
       minCoord:
         x: 11
-        y: 3
+        y: 0
       maxCoord:
         x: 11
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 11
       minCoord:
         x: 12
-        y: 3
+        y: 0
       maxCoord:
         x: 12
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 15
       minCoord:
         x: 13
-        y: 3
+        y: 0
       maxCoord:
         x: 13
-        y: 3
+        y: 7
       sideCoord:
         x: 0
         y: 0
     - type: 14
       minCoord:
         x: 14
-        y: 3
+        y: 0
       maxCoord:
         x: 14
         y: 3
@@ -252,7 +207,7 @@ MonoBehaviour:
     - type: 17
       minCoord:
         x: 15
-        y: 3
+        y: 0
       maxCoord:
         x: 15
         y: 3
@@ -262,15 +217,23 @@ MonoBehaviour:
     - type: 16
       minCoord:
         x: 16
-        y: 3
+        y: 0
       maxCoord:
         x: 16
         y: 3
       sideCoord:
         x: 0
         y: 0
-  worldScale: 24
-  worldSubdivisions: 5
+    - type: 18
+      minCoord:
+        x: 0
+        y: 15
+      maxCoord:
+        x: 0
+        y: 15
+      sideCoord:
+        x: 0
+        y: 0
   b: 0
   randomAnt: 1
   element: 1
@@ -290,22 +253,36 @@ MonoBehaviour:
   eleSpawnMin: 1
   eleSpawnMax: 2
   activeElementals: 1
---- !u!1001 &100100000
-Prefab:
-  m_ObjectHideFlags: 1
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 0}
-      propertyPath: worldPrefab
-      value: 
-      objectReference: {fileID: 124366, guid: e32e99e140d8e4043946127d027758f8, type: 2}
-    - target: {fileID: 0}
-      propertyPath: textMeshPrefab
-      value: 
-      objectReference: {fileID: 429764, guid: 6a39ddbcc9eca4aa9a71bc26fe7788ad, type: 2}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 0}
-  m_RootGameObject: {fileID: 177840}
-  m_IsPrefabAsset: 1
+  bM: {fileID: 0}
+--- !u!114 &11435054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab2caf6f5ac35491fa6202a9ae29ab24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scale: 10
+  subdivisions: 4
+--- !u!114 &11423006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9895b6bcf9fcf34b8d670645c4b910d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  worldPrefab: {fileID: 124366, guid: e32e99e140d8e4043946127d027758f8, type: 3}
+  tileWidth: 100
+  tileHeight: 100
+  tileCountW: 21
+  tileCountH: 21
+  hexagonal: 1

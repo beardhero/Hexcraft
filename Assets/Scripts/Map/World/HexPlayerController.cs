@@ -57,11 +57,12 @@ public class HexPlayerController : Mirror.NetworkBehaviour {
             cam = gameObject.GetComponentInChildren<Camera>();
             //wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
             aW = WorldManager.activeWorld;
-            trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
-            origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
             animator = player.GetComponent<Animator>();
             animator.enabled = true;
             animator.Play("Idle");
+            //trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
+            //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
+           
             //runebook test
             //byte[] b = new byte[32];
             //for(int i = 0; i < 32; i++)

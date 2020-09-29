@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Mirror;
+
 public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back front
 
 [RequireComponent(typeof(WorldRenderer))]
-public class WorldManager : MonoBehaviour
+public class WorldManager : NetworkBehaviour
 {
   // === Public ===
   public GameObject player;
@@ -93,7 +95,7 @@ public class WorldManager : MonoBehaviour
   HexTile forwardTile;
 
   public BlockManager bM;
-  
+
   public World Initialize(bool loadWorld = false)
   {
     staticTileSet = regularTileSet;

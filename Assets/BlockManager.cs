@@ -3,6 +3,7 @@ using LibNoise.Unity.Generator;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Mirror;
 
 public class BlockManager : MonoBehaviour
 {
@@ -234,6 +235,7 @@ public class BlockManager : MonoBehaviour
     public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
     {
         GameObject output = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
+        NetworkServer.Spawn(output);
 
         output.layer = 0;
         MeshFilter myFilter = output.GetComponent<MeshFilter>();

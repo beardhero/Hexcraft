@@ -46,4 +46,6 @@ MonoBehaviour:
   blockPrefab: {fileID: 2247644829232496619, guid: 5d9748ddde6a5664dae8b7b7f3f7d2b8,
     type: 3}
   worldManager: {fileID: 0}
-  toPlace: 0
+  toPlace: 4
+  updateStep: 0
+  updateTimer: 0
