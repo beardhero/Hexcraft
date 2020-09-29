@@ -40,15 +40,14 @@ public class GameManager : NetworkBehaviour
   public static CombatManager combatManager;
   public static RoundManager roundManager;
 
-    public override void OnStartClient()
+    private void Start()
     {
-        Debug.Log("client started");
-        base.OnStartClient();
         Init();
     }
     // *** Main Initializer ***
     void Init()
   {
+        Debug.Log("fk");
         myTrans = transform;
 
     // @TODO: Make these a singleton pattern

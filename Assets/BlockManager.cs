@@ -18,7 +18,6 @@ public class BlockManager : NetworkBehaviour
     public static float cloudDensity = .24f;
     public static float rayrange;
 
-    public GameObject blockPrefab;
     public WorldManager worldManager;
     //public Transform playerTrans;
     public TileType toPlace;
@@ -33,6 +32,14 @@ public class BlockManager : NetworkBehaviour
     public static float blockQuarterFactor = .025f;
     //private static float _blockScaleFactor = 0.1f;
     //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
+    public GameObject nmgo;
+    public NetworkManager nm;
+
+    private void Start()
+    {
+        nmgo = GameObject.FindGameObjectWithTag("Network Manager");
+        nm = nmgo.GetComponent<NetworkManager>();
+    }
 
     [Command(ignoreAuthority = true)]
     public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor) {
@@ -201,7 +208,7 @@ public class BlockManager : NetworkBehaviour
 
     public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
     {
-        GameObject output = NetworkManager.Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
+        GameObject output = Instantiate(nm.spawnPrefabs[0], Vector3.zero, Quaternion.identity);
         NetworkServer.Spawn(output);
 
         output.layer = 0;
@@ -484,7 +491,6 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
-    [ClientRpc]
     public void AddToPlate(GameObject plate, int blockInd)//HexBlock hb)
     {
         MeshFilter mf = plate.GetComponent<MeshFilter>();
