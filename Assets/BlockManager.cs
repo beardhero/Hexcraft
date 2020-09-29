@@ -484,6 +484,7 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
+    [ClientRpc]
     public void AddToPlate(GameObject plate, int blockInd)//HexBlock hb)
     {
         MeshFilter mf = plate.GetComponent<MeshFilter>();

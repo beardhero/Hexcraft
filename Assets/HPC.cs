@@ -14,8 +14,6 @@ public class HPC : MonoBehaviour
     World aW;
     Vector3 origin;
     Animator animator;
-    float currentHeight = 0;
-    float testH = 0;
     public float gravityScale = 4f;
     public float walkSpeed = 1.33f;
     public float runSpeed = 1.33f;

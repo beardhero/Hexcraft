@@ -8,7 +8,7 @@ using Mirror;
 
 public enum RelativityState {None, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
   // === Const & Inspector Cache ===
   public RelativityState beginningState = RelativityState.WorldMap;
@@ -40,43 +40,14 @@ public class GameManager : MonoBehaviour
   public static CombatManager combatManager;
   public static RoundManager roundManager;
 
-    //World Networking
-    public GameObject blockPrefab;
-    public void ClientConnect()
+    public override void OnStartClient()
     {
-        ClientScene.RegisterPrefab(blockPrefab);
-        NetworkClient.RegisterHandler<ConnectMessage>(OnClientConnect);
-        NetworkClient.Connect("localhost");
-    }
-
-    void OnClientConnect(NetworkConnection conn, ConnectMessage msg)
-    {
-        Debug.Log("Connected to server: " + conn);
-    }
-
-    public void ServerListen()
-    {
-        NetworkServer.RegisterHandler<ConnectMessage>(OnServerConnect);
-        NetworkServer.RegisterHandler<ReadyMessage>(OnClientReady);
-
-        // start listening, and allow up to 4 connections
-        NetworkServer.Listen(4);
-    }
-
-    // When client is ready spawn a few trees  
-    void OnClientReady(NetworkConnection conn, ReadyMessage msg)
-    {
-        Debug.Log("Client is ready to start: " + conn);
-        NetworkServer.SetClientReady(conn);
-        //Init();
-    }
-
-    void OnServerConnect(NetworkConnection conn, ConnectMessage msg)
-    {
-        Debug.Log("New client connected: " + conn);
+        Debug.Log("client started");
+        base.OnStartClient();
+        Init();
     }
     // *** Main Initializer ***
-    void Start()
+    void Init()
   {
         myTrans = transform;
 

@@ -39,8 +39,6 @@ public class HexPlayerController : NetworkBehaviour {
 	public float camRotateSpeed = 4.2f;
 	public float camSens = .5f;
 	public int spawnTile = 0;
-    //private float rotationApex = -1f;
-    //private Transform initialTrans;
 
     //public Runebook runeBook;
     // Use this for initialization
@@ -140,7 +138,8 @@ public class HexPlayerController : NetworkBehaviour {
         if (isLocalPlayer)
         {
             //normalize down
-            gravityDir = (origin - trans.position).normalized;
+            //gravityDir = (origin - trans.position).normalized;
+            gravityDir = -trans.position.normalized;
             trans.rotation = Quaternion.FromToRotation(trans.up, -gravityDir) * trans.rotation;
             //gravity
             rigbody.AddForce(gravityDir * gravityScale * rigbody.mass, ForceMode.Acceleration);
