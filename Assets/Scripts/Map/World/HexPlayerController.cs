@@ -45,6 +45,9 @@ public class HexPlayerController : NetworkBehaviour {
     void Start () {
         if (isLocalPlayer)
         {
+            // This hides the cursor
+            Cursor.lockState = CursorLockMode.Locked;
+
             player = gameObject;
             trans = player.transform;
             //initialTrans = trans;
@@ -97,8 +100,6 @@ public class HexPlayerController : NetworkBehaviour {
         {
             if (Input.GetKeyDown(KeyCode.Mouse0))
             {
-                Debug.Log(blockman);
-                Debug.Log(cam.transform);
                 Vector3 rp = cam.gameObject.transform.position;
                 Vector3 rf = cam.gameObject.transform.forward;
                 blockman.CmdRayPlaceBlock(rp, rf);
@@ -159,8 +160,8 @@ public class HexPlayerController : NetworkBehaviour {
             float horz = Input.GetAxis("Horizontal");
             if (horz != 0)
             {
-                //rigbody.velocity += -trans.right * vert * walkSpeed;
-                trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
+                rigbody.velocity += trans.right * horz * walkSpeed;
+                //trans.RotateAround(trans.position, gravityDir, -horz * rotateSpeed);
                 animator.Play("Walk");
             }
 
@@ -172,7 +173,7 @@ public class HexPlayerController : NetworkBehaviour {
             //}
             //Debug.Log(Vector3.Dot(head.position.normalized, cam.transform.forward.normalized));
             float camDot = Vector3.Dot(head.position.normalized, cam.transform.forward.normalized);
-            if ((camDot <= .9 && Input.GetAxis("Mouse Y") > 0) || (camDot >= -.9 && Input.GetAxis("Mouse Y") < 0))
+            if ((camDot <= .999 && Input.GetAxis("Mouse Y") > 0) || (camDot >= -.999 && Input.GetAxis("Mouse Y") < 0))
             {
                 cam.transform.RotateAround(head.position, cam.transform.right, -camRotateSpeed * Input.GetAxis("Mouse Y"));
             }
