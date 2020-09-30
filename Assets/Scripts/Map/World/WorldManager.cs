@@ -8,7 +8,7 @@ using Mirror;
 public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back front
 
 [RequireComponent(typeof(WorldRenderer))]
-public class WorldManager : NetworkBehaviour
+public class WorldManager : MonoBehaviour
 {
   // === Public ===
   public GameObject player;
@@ -96,7 +96,7 @@ public class WorldManager : NetworkBehaviour
 
   public BlockManager bM;
 
-  public World Initialize(bool loadWorld = false)
+  public World Initialize(GameObject blockPrefab, bool loadWorld = false)
   {
     staticTileSet = regularTileSet;
     currentWorldObject = new GameObject("World");
@@ -221,7 +221,7 @@ public class WorldManager : NetworkBehaviour
         string s = "seedtestspeedtest";
         Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
         bM.Populate(s);
-    bM.BlockPlates(activeWorld, regularTileSet);
+    bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
         //bM.Biomes();
         //start clouds
         //StartCoroutine(Clouds());

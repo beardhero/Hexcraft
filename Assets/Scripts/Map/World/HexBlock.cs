@@ -18,13 +18,10 @@ public class HexBlock
     public bool unbreakable;
     public bool quarter;
 
-
-
-    //public bool bedrock;
-
-    public HexBlock(HexTile tile, TileType tileType, int _blockHeight, bool canBreak, bool quarterBlock)
+    public HexBlock(int hexTileIndex, TileType tileType, int _blockHeight, bool canBreak, bool quarterBlock)
     {
-        tileIndex = tile.index;
+        HexTile tile = WorldManager.activeWorld.tiles[hexTileIndex];
+        tileIndex = hexTileIndex;
         blockHeight = _blockHeight;
         quarter = quarterBlock;
         //height = topHeight;

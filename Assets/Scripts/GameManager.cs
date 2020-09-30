@@ -39,15 +39,16 @@ public class GameManager : NetworkBehaviour
   public static GameObject combatManagerObj;
   public static CombatManager combatManager;
   public static RoundManager roundManager;
+  public GameObject blockPrefab;
 
-    private void Start()
-    {
-        Init();
+    private void Start() {
+            Init();
     }
+
     // *** Main Initializer ***
     void Init()
-  {
-        Debug.Log("fk");
+    {
+        Debug.Log("cmdinit");
         myTrans = transform;
 
     // @TODO: Make these a singleton pattern
@@ -95,7 +96,7 @@ public class GameManager : NetworkBehaviour
   {
     worldManagerObj = GameObject.FindWithTag("World Manager");
     worldManager = worldManagerObj.GetComponent<WorldManager>();
-    currentWorld = worldManager.Initialize(loading);
+    currentWorld = worldManager.Initialize(blockPrefab, loading);
   }
 
   void InitializeCombat()

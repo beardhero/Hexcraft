@@ -32,14 +32,6 @@ public class BlockManager : NetworkBehaviour
     public static float blockQuarterFactor = .025f;
     //private static float _blockScaleFactor = 0.1f;
     //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
-    public GameObject nmgo;
-    public NetworkManager nm;
-
-    private void Start()
-    {
-        nmgo = GameObject.FindGameObjectWithTag("Network Manager");
-        nm = nmgo.GetComponent<NetworkManager>();
-    }
 
     [Command(ignoreAuthority = true)]
     public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor) {
@@ -56,11 +48,23 @@ public class BlockManager : NetworkBehaviour
         {
             GameObject hitObject = hit.transform.gameObject;
             BlockInfo info = hitObject.GetComponent<BlockInfo>();
+            int plateInd = -1;
+            //Find plate index
+            for (int p = 0; p < plates.Count; p++)
+            {
+                if (plates[p] == hitObject) {
+                    plateInd = p;
+                }
+            }
+            if (plateInd == -1) {
+                Debug.Log("error finding plate index");
+            }
+
             //Debug.Log(tri);
             if (info != null)
             {
                 //Find block we hit
-                int tri = hit.triangleIndex;// % 24;
+                int tri = hit.triangleIndex;
                 int blockIndex = tri / 24;
 
                 HexBlock hb = blocks[info.blockIndexes[blockIndex]];
@@ -78,7 +82,6 @@ public class BlockManager : NetworkBehaviour
 
                 if (tri < 6) //top
                 {
-
                     //Debug.Log("Placing Top  " + tri);
                     if (hb.blockHeight + 1 >= maxHeight)
                     {
@@ -87,8 +90,8 @@ public class BlockManager : NetworkBehaviour
                     }
                     Debug.Log("placing at height " + hb.blockHeight + 1);
 
-                    blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight + 1, false, quarterBlock));
-                    AddToPlate(hitObject, blocks.Count - 1);
+                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight + 1, false, quarterBlock);
+                    RpcAddToPlate(plateInd);
                 }
                 if (tri >= 6 && tri < 12) //bot
                 {
@@ -98,8 +101,8 @@ public class BlockManager : NetworkBehaviour
                         Debug.Log("min height exceeded");
                         return;
                     }
-                    blocks.Add(CreateBlock(tile, toPlace, hb.blockHeight - 1, false, quarterBlock));
-                    AddToPlate(hitObject, blocks.Count - 1);
+                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight - 1, false, quarterBlock);
+                    RpcAddToPlate(plateInd);
                 }
                 if (tri >= 12 && tri < 24) //side
                 {
@@ -118,8 +121,8 @@ public class BlockManager : NetworkBehaviour
                             check = nextCheck;
                         }
                     }
-                    blocks.Add(CreateBlock(n, toPlace, hb.blockHeight, false, quarterBlock));
-                    AddToPlate(plates[n.plate], blocks.Count - 1);
+                    RpcCreateBlock(tile.neighbors[0], toPlace, hb.blockHeight, false, quarterBlock);
+                    RpcAddToPlate(n.plate);
                 }
             }
         }
@@ -134,6 +137,19 @@ public class BlockManager : NetworkBehaviour
         {
             GameObject hitObject = hit.transform.gameObject;
             BlockInfo info = hitObject.GetComponent<BlockInfo>();
+            int plateInd = -1;
+            //Find plate index
+            for (int p = 0; p < plates.Count; p++)
+            {
+                if (plates[p] == hitObject)
+                {
+                    plateInd = p;
+                }
+            }
+            if (plateInd == -1)
+            {
+                Debug.Log("error finding plate index");
+            }
             //Find block we hit
             int tri = hit.triangleIndex;// % 24;
             int blockInPlate = tri / 24;
@@ -143,13 +159,19 @@ public class BlockManager : NetworkBehaviour
                 int blockInWorld = info.blockIndexes[blockInPlate];
                 if (!blocks[blockInWorld].unbreakable)
                 {
-                    RemoveFromPlate(hitObject, blockInWorld);
+                    RpcRemoveFromPlate(plateInd, blockInWorld);
                 }
             }
         }
     }
 
-    public HexBlock CreateBlock(HexTile tile, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
+    [ClientRpc]
+    public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
+    {
+        blocks.Add(CreateBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock));
+    }
+
+    public HexBlock CreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
     {
         if (blocks == null)
         {
@@ -160,11 +182,11 @@ public class BlockManager : NetworkBehaviour
         {
             blocksOnTile = new Dictionary<int, int[]>();
         }
-        if (!blocksOnTile.ContainsKey(tile.index))
+        if (!blocksOnTile.ContainsKey(hexTileInd))
         {
-            blocksOnTile[tile.index] = new int[maxHeight];
+            blocksOnTile[hexTileInd] = new int[maxHeight];
         }
-        HexBlock toPlace = new HexBlock(tile, type, blockHeight, isBreakable, quarterBlock);//, isBedrock);
+        HexBlock toPlace = new HexBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock);//, isBedrock);
 
         //add to tile lookup
         //blocksOnTile[tile.index][blockHeight] = blocks.Count;
@@ -173,7 +195,7 @@ public class BlockManager : NetworkBehaviour
         return toPlace;
     }
 
-    public List<GameObject> BlockPlates(World world, TileSet tileSet)
+    public List<GameObject> BlockPlates(World world, TileSet tileSet, GameObject blockPrefab)
     {
         if (worldManager == null)
         {
@@ -198,7 +220,7 @@ public class BlockManager : NetworkBehaviour
         for (int i = 0; i < world.numberOfPlates; i++)
         {
 
-            output.Add(RenderBlockPlate(blocks, i));
+            output.Add(RenderBlockPlate(blocks, i, blockPrefab));
 
         }
         plates = output;
@@ -206,10 +228,9 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
-    public GameObject RenderBlockPlate(List<HexBlock> blocks, int p)
+    public GameObject RenderBlockPlate(List<HexBlock> blocks, int p, GameObject blockPrefab)
     {
-        GameObject output = Instantiate(nm.spawnPrefabs[0], Vector3.zero, Quaternion.identity);
-        NetworkServer.Spawn(output);
+        GameObject output = Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
 
         output.layer = 0;
         MeshFilter myFilter = output.GetComponent<MeshFilter>();
@@ -467,7 +488,6 @@ public class BlockManager : NetworkBehaviour
                 triangles.Add(vertices.Count - 2);
                 triangles.Add(vertices.Count - 1);
             }
-
         }
         //Debug.Log("plate " + p + " block count " + info.blockIndexes.Count);
         //@BUG fix the plate generation, quick fix for this plateOrigin bug
@@ -491,8 +511,11 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
-    public void AddToPlate(GameObject plate, int blockInd)//HexBlock hb)
+    [ClientRpc]
+    public void RpcAddToPlate(int plateId)
     {
+        int blockInd = blocks.Count - 1;
+        GameObject plate = plates[plateId];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
@@ -510,6 +533,7 @@ public class BlockManager : NetworkBehaviour
             return;
         }
         info.blockIndexes.Add(blockInd);
+        Debug.Log("block index: " + blockInd);
         HexBlock hb = blocks[blockInd];
         //info.blockCount++;
         //info.tileIndex = hb.tileIndex;
@@ -748,8 +772,10 @@ public class BlockManager : NetworkBehaviour
         //return output;
     }
 
-    public void RemoveFromPlate(GameObject plate, int blockInWorld)
+    [ClientRpc]
+    public void RpcRemoveFromPlate(int plateInd, int blockInWorld)
     {
+        GameObject plate = plates[plateInd];
         //HexBlock hb = blocks[block];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
@@ -838,8 +864,6 @@ public class BlockManager : NetworkBehaviour
         mf.sharedMesh = m;
         mc.sharedMesh = m;
     }
-
-
 
     public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
     {
@@ -983,7 +1007,7 @@ public class BlockManager : NetworkBehaviour
                     {
                         t = TileType.Arbor;
                     }
-                    HexBlock hb = CreateBlock(ht, t, i, bedrock, quarterBlock);
+                    HexBlock hb = CreateBlock(ht.index, t, i, bedrock, quarterBlock);
                     double perlinVal = perlin.GetValue(hb.topCenter.x * scale, hb.topCenter.y * scale, hb.topCenter.z * scale);// * amplitude;
                     
                     pAvg += perlinVal;
