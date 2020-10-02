@@ -96,6 +96,7 @@ public class HexPlayerController : NetworkBehaviour {
 	}
     void Update()
     {
+        RotateSkybox();
         if (isLocalPlayer)
         {
             if (Input.GetKeyDown(KeyCode.Mouse0))
@@ -193,6 +194,11 @@ public class HexPlayerController : NetworkBehaviour {
             //zoomMin = mag * zoomFactor;
             BlockManager.rayrange = mag * rayScaleFactor;
         }
+    }
+
+    void RotateSkybox(){
+        RenderSettings.skybox.SetFloat("_Rotation", Time.time*10.0f);
+        DynamicGI.UpdateEnvironment();
     }
 	void OnCollisionEnter(Collision collision)
 	{
