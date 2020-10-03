@@ -48,48 +48,47 @@ public class GameManager : NetworkBehaviour
     // *** Main Initializer ***
     void Init()
     {
-        Debug.Log("cmdinit");
         myTrans = transform;
 
-    // @TODO: Make these a singleton pattern
-    //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone
-    Hex.Initialize();
+        // @TODO: Make these a singleton pattern
+        //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone
+        Hex.Initialize();
 
-    // Ideally, the only place state is manually set.
-    state = beginningState;
-    bool loading;
-    switch (state)
-    {
-      case RelativityState.WorldDuel:
-        loading = false; //@TODO: still caching on duel
-        InitializeWorld(loading);
+        // Ideally, the only place state is manually set.
+        state = beginningState;
+        bool loading;
+        switch (state)
+        {
+          case RelativityState.WorldDuel:
+            loading = false; //@TODO: still caching on duel
+            InitializeWorld(loading);
 
-        InitializeCombat();
-        combatManager.BeginDuel();
-      break;
+            InitializeCombat();
+            combatManager.BeginDuel();
+          break;
 
-      case RelativityState.WorldMap:
-        loading = true;
-        InitializeWorld(loading);
-      break;
+          case RelativityState.WorldMap:
+            loading = true;
+            InitializeWorld(loading);
+          break;
 
-      case RelativityState.ZoneMap:
-        InitializeZone();
-      break;
+          case RelativityState.ZoneMap:
+            InitializeZone();
+          break;
 
-      case RelativityState.Caching:
-       // Debug.Log("got to game manager caching");
-        loading = false;
-        InitializeWorld(loading);
-        //Debug.Log("advanced past initialize");
-        worldCacher = worldManagerObj.GetComponent<CreateWorldCache>();
-        worldCacher.BuildCache(WorldManager.activeWorld);
-      break;
+          case RelativityState.Caching:
+           // Debug.Log("got to game manager caching");
+            loading = false;
+            InitializeWorld(loading);
+            //Debug.Log("advanced past initialize");
+            worldCacher = worldManagerObj.GetComponent<CreateWorldCache>();
+            worldCacher.BuildCache(WorldManager.activeWorld);
+          break;
 
-      default:
-        Debug.LogError("Please set a state in GameManager.beginningState before playing.");
-      break;
-    }
+          default:
+            Debug.LogError("Please set a state in GameManager.beginningState before playing.");
+          break;
+      }
   }
 
   void InitializeWorld(bool loading)

@@ -1048,7 +1048,7 @@ public class WorldManager : MonoBehaviour
   }*/
   public void JoeLife()
   {
-     foreach(HexTile ht in activeWorld.tiles)
+    foreach(HexTile ht in activeWorld.tiles)
     {
       ht.typeToSet = TileType.Light;
       //TileType nextTile = ht.type;

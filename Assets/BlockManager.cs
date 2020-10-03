@@ -44,7 +44,7 @@ public class BlockManager : NetworkBehaviour
         Ray ray = new Ray(rayPos, rayFor);
         RaycastHit hit = new RaycastHit();
         Debug.Log("ray range " + rayrange);
-        if (Physics.Raycast(ray, out hit, rayrange))
+        if (Physics.Raycast(ray, out hit, 10000))
         {
             GameObject hitObject = hit.transform.gameObject;
             BlockInfo info = hitObject.GetComponent<BlockInfo>();
@@ -124,9 +124,9 @@ public class BlockManager : NetworkBehaviour
                             check = nextCheck;
                         }
                     }
-                    blocks.Add(CreateBlock(tile.neighbors[0], toPlace, hb.blockHeight, false, quarterBlock));
-                    AddToPlate(plateInd);
-                    RpcCreateBlock(tile.neighbors[0], toPlace, hb.blockHeight, false, quarterBlock);
+                    blocks.Add(CreateBlock(n.index, toPlace, hb.blockHeight, false, quarterBlock));
+                    AddToPlate(n.plate);
+                    RpcCreateBlock(n.index, toPlace, hb.blockHeight, false, quarterBlock);
                     RpcAddToPlate(n.plate);
                 }
             }
@@ -168,13 +168,19 @@ public class BlockManager : NetworkBehaviour
                     RpcRemoveFromPlate(plateInd, blockInWorld);
                 }
             }
+            else {
+                Debug.Log("block info null " + plateInd + "  " + blockInPlate);
+            }
         }
     }
 
     [ClientRpc]
     public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
     {
-        blocks.Add(CreateBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock));
+        if (!isServer)
+        {
+            blocks.Add(CreateBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock));
+        }
     }
 
     public HexBlock CreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
@@ -225,9 +231,7 @@ public class BlockManager : NetworkBehaviour
         //Debug.Log("world.numberofPlates: " + world.numberOfPlates);
         for (int i = 0; i < world.numberOfPlates; i++)
         {
-
             output.Add(RenderBlockPlate(blocks, i, blockPrefab));
-
         }
         plates = output;
 
@@ -520,267 +524,269 @@ public class BlockManager : NetworkBehaviour
     [ClientRpc]
     public void RpcAddToPlate(int plateId)
     {
-        int blockInd = blocks.Count - 1;
-        GameObject plate = plates[plateId];
-        MeshFilter mf = plate.GetComponent<MeshFilter>();
-        MeshCollider mc = plate.GetComponent<MeshCollider>();
-        Mesh m = mf.sharedMesh;
-
-        SerializableVector3 origin = WorldManager.activeWorld.origin;
-        List<Vector3> vertices = m.vertices.ToList();
-        List<int> triangles = m.triangles.ToList();
-        List<Vector3> normals = m.normals.ToList();
-        List<Vector2> uvs = m.uv.ToList();
-
-        BlockInfo info = plate.GetComponent<BlockInfo>();
-        if (info.blockIndexes.Count >= maxBlocks)
+        if (!isServer)
         {
-            Debug.Log("Mana full");
-            return;
+            int blockInd = blocks.Count - 1;
+            Debug.Log("block index on adding " + blockInd);
+            GameObject plate = plates[plateId];
+            MeshFilter mf = plate.GetComponent<MeshFilter>();
+            MeshCollider mc = plate.GetComponent<MeshCollider>();
+            Mesh m = mf.sharedMesh;
+
+            SerializableVector3 origin = WorldManager.activeWorld.origin;
+            List<Vector3> vertices = m.vertices.ToList();
+            List<int> triangles = m.triangles.ToList();
+            List<Vector3> normals = m.normals.ToList();
+            List<Vector2> uvs = m.uv.ToList();
+            
+            BlockInfo info = plate.GetComponent<BlockInfo>();
+            if (info.blockIndexes.Count >= maxBlocks)
+            {
+                Debug.Log("Mana full");
+                return;
+            }
+            info.blockIndexes.Add(blockInd);
+            Debug.Log("block index: " + blockInd);
+            HexBlock hb = blocks[blockInd];
+            //info.blockCount++;
+            //info.tileIndex = hb.tileIndex;
+            //info.topTris = new List<int>();
+            //info.botTris = new List<int>();
+            //info.sideTris = new List<int>();
+
+            IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
+            Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
+
+            // Center of hexagon
+            int centerIndex = vertices.Count;
+            //ht.hexagon.uv0i = uvs.Count;
+            // Triangle 1
+            vertices.Add(hb.topCenter); //0
+            normals.Add((origin + hb.topCenter));
+            uvs.Add(WorldRenderer.uv0 + uvOffset);
+
+            //ht.hexagon.uv1i = uvs.Count;
+
+            vertices.Add(hb.topv1); //1
+            normals.Add((origin + hb.topv1));
+            uvs.Add(WorldRenderer.uv1 + uvOffset);
+
+            //ht.hexagon.uv2i = uvs.Count;
+
+            vertices.Add(hb.topv2); //2
+            normals.Add((origin + hb.topv2));
+            uvs.Add(WorldRenderer.uv2 + uvOffset);
+
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            // T2
+            //ht.hexagon.uv3i = uvs.Count;
+            vertices.Add(hb.topv3);
+            normals.Add((origin + hb.topv3));
+            uvs.Add(WorldRenderer.uv3 + uvOffset);
+
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            // T3
+            //ht.hexagon.uv4i = uvs.Count;
+            vertices.Add(hb.topv4);
+            normals.Add((origin + hb.topv4));
+            uvs.Add(WorldRenderer.uv4 + uvOffset);
+
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            // T4
+            //ht.hexagon.uv5i = uvs.Count;
+            vertices.Add(hb.topv5);
+            normals.Add((origin + hb.topv5));
+            uvs.Add(WorldRenderer.uv5 + uvOffset);
+
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            // T5
+            //ht.hexagon.uv6i = uvs.Count;
+            vertices.Add(hb.topv6);
+            normals.Add((origin + hb.topv6));
+            uvs.Add(WorldRenderer.uv6 + uvOffset);
+
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            // T6
+            //info.topTris.Add(triangles.Count);
+            triangles.Add(centerIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 6);
+
+            //////////////////////////// bottom hex
+
+            // Center of hexagon
+            int botcenterIndex = vertices.Count;
+            //ht.hexagon.uv0i = uvs.Count;
+            // bTriangle 1
+            vertices.Add(hb.botCenter); //7
+            normals.Add((origin + hb.botCenter));
+            uvs.Add(WorldRenderer.uv0 + uvOffset);
+
+            //ht.hexagon.uv1i = uvs.Count;
+
+            vertices.Add(hb.botv1); //8
+            normals.Add((origin + hb.botv1));
+            uvs.Add(WorldRenderer.uv3 + uvOffset);
+
+            //ht.hexagon.uv2i = uvs.Count;
+
+            vertices.Add(hb.botv2);//9
+            normals.Add((origin + hb.botv2));
+            uvs.Add(WorldRenderer.uv4 + uvOffset);
+            //bT1
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
+
+
+            // bT2
+            //ht.hexagon.uv3i = uvs.Count;
+            vertices.Add(hb.botv3);//10
+            normals.Add((origin + hb.botv3));
+            uvs.Add(WorldRenderer.uv5 + uvOffset);
+
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
+
+
+            // bT3
+            //ht.hexagon.uv4i = uvs.Count;
+            vertices.Add(hb.botv4);//11
+            normals.Add((origin + hb.botv4));
+            uvs.Add(WorldRenderer.uv6 + uvOffset);
+
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
+
+
+            // bT4
+            //ht.hexagon.uv5i = uvs.Count; 
+            vertices.Add(hb.botv5); //12
+            normals.Add((origin + hb.botv5));
+            uvs.Add(WorldRenderer.uv1 + uvOffset);
+
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
+
+
+            // bT5
+            //ht.hexagon.uv6i = uvs.Count;
+            vertices.Add(hb.botv6); //13
+            normals.Add((origin + hb.botv6));
+            uvs.Add(WorldRenderer.uv2 + uvOffset);
+
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
+
+            // bT6
+            //info.botTris.Add(triangles.Count);
+            triangles.Add(botcenterIndex);
+            triangles.Add(vertices.Count - 6);
+            triangles.Add(vertices.Count - 1);
+
+
+            //sides
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 13);
+            triangles.Add(vertices.Count - 8);
+            triangles.Add(vertices.Count - 6);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 8);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 6);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 12);
+            triangles.Add(vertices.Count - 13);
+            triangles.Add(vertices.Count - 5);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 13);
+            triangles.Add(vertices.Count - 6);
+            triangles.Add(vertices.Count - 5);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 11);
+            triangles.Add(vertices.Count - 12);
+            triangles.Add(vertices.Count - 4);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 12);
+            triangles.Add(vertices.Count - 5);
+            triangles.Add(vertices.Count - 4);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 10);
+            triangles.Add(vertices.Count - 11);
+            triangles.Add(vertices.Count - 3);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 11);
+            triangles.Add(vertices.Count - 4);
+            triangles.Add(vertices.Count - 3);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 9);
+            triangles.Add(vertices.Count - 10);
+            triangles.Add(vertices.Count - 2);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 10);
+            triangles.Add(vertices.Count - 3);
+            triangles.Add(vertices.Count - 2);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 8);
+            triangles.Add(vertices.Count - 9);
+            triangles.Add(vertices.Count - 1);
+
+            //info.sideTris.Add(triangles.Count);
+            triangles.Add(vertices.Count - 9);
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 1);
+
+            m.vertices = vertices.ToArray();
+            m.triangles = triangles.ToArray();
+            m.normals = normals.ToArray();
+            m.uv = uvs.ToArray();
+            mf.sharedMesh = m;
+            mc.sharedMesh = m;
         }
-        info.blockIndexes.Add(blockInd);
-        Debug.Log("block index: " + blockInd);
-        HexBlock hb = blocks[blockInd];
-        //info.blockCount++;
-        //info.tileIndex = hb.tileIndex;
-        //info.topTris = new List<int>();
-        //info.botTris = new List<int>();
-        //info.sideTris = new List<int>();
-
-        IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
-        Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
-
-        // Center of hexagon
-        int centerIndex = vertices.Count;
-        //ht.hexagon.uv0i = uvs.Count;
-        // Triangle 1
-        vertices.Add(hb.topCenter); //0
-        normals.Add((origin + hb.topCenter));
-        uvs.Add(WorldRenderer.uv0 + uvOffset);
-
-        //ht.hexagon.uv1i = uvs.Count;
-
-        vertices.Add(hb.topv1); //1
-        normals.Add((origin + hb.topv1));
-        uvs.Add(WorldRenderer.uv1 + uvOffset);
-
-        //ht.hexagon.uv2i = uvs.Count;
-
-        vertices.Add(hb.topv2); //2
-        normals.Add((origin + hb.topv2));
-        uvs.Add(WorldRenderer.uv2 + uvOffset);
-
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        // T2
-        //ht.hexagon.uv3i = uvs.Count;
-        vertices.Add(hb.topv3);
-        normals.Add((origin + hb.topv3));
-        uvs.Add(WorldRenderer.uv3 + uvOffset);
-
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        // T3
-        //ht.hexagon.uv4i = uvs.Count;
-        vertices.Add(hb.topv4);
-        normals.Add((origin + hb.topv4));
-        uvs.Add(WorldRenderer.uv4 + uvOffset);
-
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        // T4
-        //ht.hexagon.uv5i = uvs.Count;
-        vertices.Add(hb.topv5);
-        normals.Add((origin + hb.topv5));
-        uvs.Add(WorldRenderer.uv5 + uvOffset);
-
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        // T5
-        //ht.hexagon.uv6i = uvs.Count;
-        vertices.Add(hb.topv6);
-        normals.Add((origin + hb.topv6));
-        uvs.Add(WorldRenderer.uv6 + uvOffset);
-
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        // T6
-        //info.topTris.Add(triangles.Count);
-        triangles.Add(centerIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 6);
-
-        //////////////////////////// bottom hex
-
-        // Center of hexagon
-        int botcenterIndex = vertices.Count;
-        //ht.hexagon.uv0i = uvs.Count;
-        // bTriangle 1
-        vertices.Add(hb.botCenter); //7
-        normals.Add((origin + hb.botCenter));
-        uvs.Add(WorldRenderer.uv0 + uvOffset);
-
-        //ht.hexagon.uv1i = uvs.Count;
-
-        vertices.Add(hb.botv1); //8
-        normals.Add((origin + hb.botv1));
-        uvs.Add(WorldRenderer.uv3 + uvOffset);
-
-        //ht.hexagon.uv2i = uvs.Count;
-
-        vertices.Add(hb.botv2);//9
-        normals.Add((origin + hb.botv2));
-        uvs.Add(WorldRenderer.uv4 + uvOffset);
-        //bT1
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 2);
-
-
-        // bT2
-        //ht.hexagon.uv3i = uvs.Count;
-        vertices.Add(hb.botv3);//10
-        normals.Add((origin + hb.botv3));
-        uvs.Add(WorldRenderer.uv5 + uvOffset);
-
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 2);
-
-
-        // bT3
-        //ht.hexagon.uv4i = uvs.Count;
-        vertices.Add(hb.botv4);//11
-        normals.Add((origin + hb.botv4));
-        uvs.Add(WorldRenderer.uv6 + uvOffset);
-
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 2);
-
-
-        // bT4
-        //ht.hexagon.uv5i = uvs.Count; 
-        vertices.Add(hb.botv5); //12
-        normals.Add((origin + hb.botv5));
-        uvs.Add(WorldRenderer.uv1 + uvOffset);
-
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 2);
-
-
-        // bT5
-        //ht.hexagon.uv6i = uvs.Count;
-        vertices.Add(hb.botv6); //13
-        normals.Add((origin + hb.botv6));
-        uvs.Add(WorldRenderer.uv2 + uvOffset);
-
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 2);
-
-        // bT6
-        //info.botTris.Add(triangles.Count);
-        triangles.Add(botcenterIndex);
-        triangles.Add(vertices.Count - 6);
-        triangles.Add(vertices.Count - 1);
-
-
-        //sides
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 13);
-        triangles.Add(vertices.Count - 8);
-        triangles.Add(vertices.Count - 6);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 8);
-        triangles.Add(vertices.Count - 1);
-        triangles.Add(vertices.Count - 6);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 12);
-        triangles.Add(vertices.Count - 13);
-        triangles.Add(vertices.Count - 5);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 13);
-        triangles.Add(vertices.Count - 6);
-        triangles.Add(vertices.Count - 5);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 11);
-        triangles.Add(vertices.Count - 12);
-        triangles.Add(vertices.Count - 4);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 12);
-        triangles.Add(vertices.Count - 5);
-        triangles.Add(vertices.Count - 4);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 10);
-        triangles.Add(vertices.Count - 11);
-        triangles.Add(vertices.Count - 3);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 11);
-        triangles.Add(vertices.Count - 4);
-        triangles.Add(vertices.Count - 3);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 9);
-        triangles.Add(vertices.Count - 10);
-        triangles.Add(vertices.Count - 2);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 10);
-        triangles.Add(vertices.Count - 3);
-        triangles.Add(vertices.Count - 2);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 8);
-        triangles.Add(vertices.Count - 9);
-        triangles.Add(vertices.Count - 1);
-
-        //info.sideTris.Add(triangles.Count);
-        triangles.Add(vertices.Count - 9);
-        triangles.Add(vertices.Count - 2);
-        triangles.Add(vertices.Count - 1);
-
-        m.vertices = vertices.ToArray();
-        m.triangles = triangles.ToArray();
-        m.normals = normals.ToArray();
-        m.uv = uvs.ToArray();
-        mf.sharedMesh = m;
-        mc.sharedMesh = m;
-
-        //return output;
     }
 
     public void AddToPlate(int plateId)
     {
-        int blockInd = blocks.Count - 1;
+        int blockInd = blocks.Count - 1; //created block just before
         GameObject plate = plates[plateId];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
@@ -1041,94 +1047,98 @@ public class BlockManager : NetworkBehaviour
     [ClientRpc]
     public void RpcRemoveFromPlate(int plateInd, int blockInWorld)
     {
-        GameObject plate = plates[plateInd];
-        //HexBlock hb = blocks[block];
-        MeshFilter mf = plate.GetComponent<MeshFilter>();
-        MeshCollider mc = plate.GetComponent<MeshCollider>();
-        Mesh m = mf.sharedMesh;
-
-        BlockInfo info = plate.GetComponent<BlockInfo>();
-        int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
-
-        List<int> triangles = m.triangles.ToList();
-        List<Vector3> vertices = m.vertices.ToList();
-        List<Vector3> normals = m.normals.ToList();
-        List<Vector2> uvs = m.uv.ToList();
-        //get which index in blockindexes
-        //int ind = 0;
-        //remove vertices
-        for (int v = vertices.Count - 1; v >= 0; v--)
+        if (!isServer)
         {
-            if (v >= blockInPlate * 14 && v < (blockInPlate + 1) * 14)
-            {
-                //Debug.Log("removing vertex " + v);
-                vertices.RemoveAt(v);
-                normals.RemoveAt(v);
-                uvs.RemoveAt(v);
-                //vertices[v] *= 1.01f;//Vector3.zero;
+            GameObject plate = plates[plateInd];
+            //HexBlock hb = blocks[block];
+            MeshFilter mf = plate.GetComponent<MeshFilter>();
+            MeshCollider mc = plate.GetComponent<MeshCollider>();
+            Mesh m = mf.sharedMesh;
 
-            }
-        }
-        //remove triangles
+            Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
+            BlockInfo info = plate.GetComponent<BlockInfo>();
+            int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
 
-        for (int i = triangles.Count - 1; i >= 0; i--)
-        {
-            if (i >= (blockInPlate + 1) * 24 * 3)
+            List<int> triangles = m.triangles.ToList();
+            List<Vector3> vertices = m.vertices.ToList();
+            List<Vector3> normals = m.normals.ToList();
+            List<Vector2> uvs = m.uv.ToList();
+            //get which index in blockindexes
+            //int ind = 0;
+            //remove vertices
+            for (int v = vertices.Count - 1; v >= 0; v--)
             {
-                //Debug.Log("subtracting tri" + i);
-                //Debug.Log("before " + triangles[i]);
-                triangles[i] -= 14;
-                //if (triangles[i] < 0)
-                //{ Debug.Log("fucked up tri" + triangles[i]); }
-                //Debug.Log("after " + triangles[i]);
-            }
-            if (i >= blockInPlate * 24 * 3 && i < (blockInPlate + 1) * 24 * 3)
-            {
-                // Debug.Log("removing triangle " + i);
-                //m.triangles[i] = -1;
-                triangles.RemoveAt(i);
-            }
-        }
-
-        //clean up block lists
-        //decrement blockindex
-        foreach (GameObject p in plates)
-        {
-            BlockInfo binfo = p.GetComponent<BlockInfo>();
-            for (int r = 0; r < binfo.blockIndexes.Count; r++)
-            {
-                if (binfo.blockIndexes[r] > blockInWorld)
+                if (v >= blockInPlate * 14 && v < (blockInPlate + 1) * 14)
                 {
-                    binfo.blockIndexes[r]--;
+                    //Debug.Log("removing vertex " + v);
+                    vertices.RemoveAt(v);
+                    normals.RemoveAt(v);
+                    uvs.RemoveAt(v);
+                    //vertices[v] *= 1.01f;//Vector3.zero;
+
                 }
             }
-        }
-        /*decrement tile lookup
-        for (int t = 0; t < WorldManager.activeWorld.tiles.Count; t++)
-        {
-            for (int b = 0; b < maxHeight; b++)
+            //remove triangles
+
+            for (int i = triangles.Count - 1; i >= 0; i--)
             {
-                if (blocksOnTile[t][b] > blockInWorld)
+                if (i >= (blockInPlate + 1) * 24 * 3)
                 {
-                    blocksOnTile[t][b]--;
+                    //Debug.Log("subtracting tri" + i);
+                    //Debug.Log("before " + triangles[i]);
+                    triangles[i] -= 14;
+                    //if (triangles[i] < 0)
+                    //{ Debug.Log("fucked up tri" + triangles[i]); }
+                    //Debug.Log("after " + triangles[i]);
+                }
+                if (i >= blockInPlate * 24 * 3 && i < (blockInPlate + 1) * 24 * 3)
+                {
+                    // Debug.Log("removing triangle " + i);
+                    //m.triangles[i] = -1;
+                    triangles.RemoveAt(i);
                 }
             }
-        }*/
 
-        info.blockIndexes.RemoveAt(blockInPlate);
-        blocks.RemoveAt(blockInWorld);
-        //reset mesh
-        Mesh newmesh = new Mesh();
-        newmesh.vertices = vertices.ToArray();
-        newmesh.normals = normals.ToArray();
-        newmesh.uv = uvs.ToArray();
-        newmesh.triangles = triangles.ToArray();
+            //clean up block lists
+            //decrement blockindex
+            foreach (GameObject p in plates)
+            {
+                BlockInfo binfo = p.GetComponent<BlockInfo>();
+                for (int r = 0; r < binfo.blockIndexes.Count; r++)
+                {
+                    if (binfo.blockIndexes[r] > blockInWorld)
+                    {
+                        binfo.blockIndexes[r]--;
+                    }
+                }
+            }
+            /*decrement tile lookup
+            for (int t = 0; t < WorldManager.activeWorld.tiles.Count; t++)
+            {
+                for (int b = 0; b < maxHeight; b++)
+                {
+                    if (blocksOnTile[t][b] > blockInWorld)
+                    {
+                        blocksOnTile[t][b]--;
+                    }
+                }
+            }*/
+            Debug.Log("blockInPlate " + blockInPlate);
+            info.blockIndexes.RemoveAt(blockInPlate);
+            blocks.RemoveAt(blockInWorld);
+            //reset mesh
+            Mesh newmesh = new Mesh();
+            newmesh.vertices = vertices.ToArray();
+            newmesh.normals = normals.ToArray();
+            newmesh.uv = uvs.ToArray();
+            newmesh.triangles = triangles.ToArray();
 
-        m = newmesh;
-        //m.vertices = vertices.ToArray();
-        //m.triangles = triangles.ToArray();
-        mf.sharedMesh = m;
-        mc.sharedMesh = m;
+            m = newmesh;
+            //m.vertices = vertices.ToArray();
+            //m.triangles = triangles.ToArray();
+            mf.sharedMesh = m;
+            mc.sharedMesh = m;
+        }
     }
 
     public void RemoveFromPlate(int plateInd, int blockInWorld)
@@ -1139,6 +1149,7 @@ public class BlockManager : NetworkBehaviour
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
 
+        Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
         BlockInfo info = plate.GetComponent<BlockInfo>();
         int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
 
@@ -1341,7 +1352,7 @@ public class BlockManager : NetworkBehaviour
         {
             bool bedrock;
             bool quarterBlock = false;
-            for (int i = 0; i < BlockManager.maxHeight; i++)
+            for (int i = 0; i < maxHeight; i++)
             {
                 if (i == 0)
                 {
@@ -1351,7 +1362,7 @@ public class BlockManager : NetworkBehaviour
                 {
                     bedrock = false;
                 }
-                int h = BlockManager.heightmap[ht.index];
+                int h = heightmap[ht.index];
                 if (i <= h)
                 {
                     TileType t = TileType.Metal;

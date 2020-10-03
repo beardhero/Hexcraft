@@ -46,7 +46,7 @@ public class HexPlayerController : NetworkBehaviour {
         if (isLocalPlayer)
         {
             // This hides the cursor
-            Cursor.lockState = CursorLockMode.Locked;
+            //Cursor.lockState = CursorLockMode.Locked;
 
             player = gameObject;
             trans = player.transform;
@@ -127,6 +127,7 @@ public class HexPlayerController : NetworkBehaviour {
                 rigbody.AddForce(-gravityDir * jumpHeight);
                 //jumped = false;
             }
+
             if (numberOfJumps >= maxJumps)
             {
                 canJump = false;
