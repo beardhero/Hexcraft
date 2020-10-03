@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using Mirror;
 
 public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back front
 
@@ -11,7 +9,7 @@ public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back fr
 public class WorldManager : MonoBehaviour
 {
   // === Public ===
-  public GameObject player;
+  //public GameObject player;
   public string worldCaptureName;
   public RenderTexture activeTex;
   public static World activeWorld;

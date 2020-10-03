@@ -62,7 +62,7 @@ public class HexPlayerController : NetworkBehaviour {
             animator.enabled = true;
             animator.Play("Idle");
             blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
-            //trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
+            trans.position = aW.tiles[spawnTile].hexagon.center * 1000f;
             //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
            
             //runebook test
