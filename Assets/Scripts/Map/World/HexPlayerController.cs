@@ -39,6 +39,14 @@ public class HexPlayerController : NetworkBehaviour {
 	public float camRotateSpeed = 4.2f;
 	public float camSens = .5f;
 	public int spawnTile = 0;
+    public GameObject elementMenuHighlight;
+    private RectTransform emh;
+    Vector3 firePos = new Vector3(-438.8f, -222.6f, 0);
+    Vector3 waterPos = new Vector3(-342.9f, -166.9f, 0);
+    Vector3 airPos = new Vector3(-342.9f, -222.4f, 0);
+    Vector3 earthPos = new Vector3(-438.8f, -167f, 0);
+    Vector3 lightPos = new Vector3(-390.9f, -139.6f, 0);
+    Vector3 darkPos = new Vector3(-390.9f, -250.6f, 0);
 
     //public Runebook runeBook;
     // Use this for initialization
@@ -46,7 +54,7 @@ public class HexPlayerController : NetworkBehaviour {
         if (isLocalPlayer)
         {
             // This hides the cursor
-            //Cursor.lockState = CursorLockMode.Locked;
+            Cursor.lockState = CursorLockMode.Locked;
 
             player = gameObject;
             trans = player.transform;
@@ -62,9 +70,10 @@ public class HexPlayerController : NetworkBehaviour {
             animator.enabled = true;
             animator.Play("Idle");
             blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
-            trans.position = aW.tiles[spawnTile].hexagon.center * 1000f;
+            trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
             //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
-           
+            emh = elementMenuHighlight.GetComponent<RectTransform>();
+            emh.anchoredPosition3D = firePos;
             //runebook test
             //byte[] b = new byte[32];
             //for(int i = 0; i < 32; i++)
@@ -99,11 +108,27 @@ public class HexPlayerController : NetworkBehaviour {
         RotateSkybox();
         if (isLocalPlayer)
         {
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f) {
+                if(emh.anchoredPosition3D == firePos) { emh.anchoredPosition3D = earthPos; blockman.toPlace = TileType.Earth; }
+                else if(emh.anchoredPosition3D == waterPos) { emh.anchoredPosition3D = airPos; blockman.toPlace = TileType.Air; }
+                else if(emh.anchoredPosition3D == airPos) { emh.anchoredPosition3D = darkPos; blockman.toPlace = TileType.Dark; }
+                else if(emh.anchoredPosition3D == earthPos) { emh.anchoredPosition3D = lightPos; blockman.toPlace = TileType.Light; }
+                else if(emh.anchoredPosition3D == lightPos) { emh.anchoredPosition3D = waterPos; blockman.toPlace = TileType.Water; }
+                else if(emh.anchoredPosition3D == darkPos) { emh.anchoredPosition3D = firePos; blockman.toPlace = TileType.Fire; }
+                   
+            } else if (Input.GetAxis("Mouse ScrollWheel") < 0f){
+                if (emh.anchoredPosition3D == firePos) { emh.anchoredPosition3D = darkPos; blockman.toPlace = TileType.Dark; }
+                else if (emh.anchoredPosition3D == darkPos) { emh.anchoredPosition3D = airPos; blockman.toPlace = TileType.Air; }
+                else if (emh.anchoredPosition3D == lightPos) { emh.anchoredPosition3D = earthPos; blockman.toPlace = TileType.Earth; }
+                else if (emh.anchoredPosition3D == earthPos) { emh.anchoredPosition3D = firePos; blockman.toPlace = TileType.Fire; }
+                else if (emh.anchoredPosition3D == airPos) { emh.anchoredPosition3D = waterPos; blockman.toPlace = TileType.Water; }
+                else if (emh.anchoredPosition3D == waterPos) { emh.anchoredPosition3D = lightPos; blockman.toPlace = TileType.Light; }
+            }
             if (Input.GetKeyDown(KeyCode.Mouse0))
             {
                 Vector3 rp = cam.gameObject.transform.position;
                 Vector3 rf = cam.gameObject.transform.forward;
-                blockman.CmdRayPlaceBlock(rp, rf);
+                blockman.CmdRayPlaceBlock(rp, rf, blockman.toPlace);
             }
 
             if (Input.GetKeyDown(KeyCode.Mouse1))

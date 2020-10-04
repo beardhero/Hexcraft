@@ -34,8 +34,9 @@ public class BlockManager : NetworkBehaviour
     //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
     //@TODO: client should do the raytracing and pass in blockIndex
     [Command(ignoreAuthority = true)]
-    public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor) {
+    public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor, TileType toplace) {
         Debug.Log("placing");
+        toPlace = toplace;
         bool quarterBlock = false;
         if (Input.GetKey(KeyCode.LeftShift))
         {
