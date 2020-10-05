@@ -199,8 +199,9 @@ public class WorldManager : MonoBehaviour
     {
       g.transform.parent = currentWorldTrans;
       //turned off hextile rendering
-      g.GetComponent<MeshRenderer>().enabled = false;
-      g.GetComponent<MeshCollider>().enabled = false;
+      g.SetActive(false);
+      //g.GetComponent<MeshRenderer>().enabled = false;
+      //g.GetComponent<MeshCollider>().enabled = false;
     }
     
     Debug.Log(activeWorld.tiles.Count);
@@ -212,17 +213,17 @@ public class WorldManager : MonoBehaviour
     }
     //block tests
     bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
-        BlockManager.blockScaleFactor /= worldSubdivisions;
-        BlockManager.blockQuarterFactor /= worldSubdivisions;
-        //place bedrock layer of blocks
-        //generate heightmap from seed
-        string s = "seedtestspeedtest";
-        Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
-        bM.Populate(s);
+    BlockManager.blockScaleFactor /= worldSubdivisions;
+    BlockManager.blockQuarterFactor /= worldSubdivisions;
+    //place bedrock layer of blocks
+    //generate heightmap from seed
+    string s = "seedtestspeedtest";
+    Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
+    bM.Populate(s);
     bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
-        //bM.Biomes();
-        //start clouds
-        //StartCoroutine(Clouds());
+    //bM.Biomes();
+    //start clouds
+    //StartCoroutine(Clouds());
 
     return activeWorld;
   }
