@@ -278,7 +278,7 @@ public class World
         numObjects++;
         switch(ht.type)
         {
-          case TileType.Gray: ht.objectToPlace = Random.Range(0,misc.Length); break;
+          case TileType.None: ht.objectToPlace = Random.Range(0,misc.Length); break;
           case TileType.Water: ht.objectToPlace = Random.Range(0,waterBiome.Length); break;
           case TileType.Fire: ht.objectToPlace = Random.Range(0,fireBiome.Length); break;
           case TileType.Earth: ht.objectToPlace = Random.Range(0,earthBiome.Length); break;
@@ -388,7 +388,7 @@ public class World
   {
     foreach(HexTile ht in tiles)
     {
-      if(ht.type != TileType.Gray){ht.ChangeType(TileType.Gray);}
+      if(ht.type != TileType.None){ht.ChangeType(TileType.None);}
       ht.antPasses = 0;
       ht.generation = 0;
     }
@@ -414,6 +414,7 @@ public List<int> GetTilesInRadius(float radius, int origin)
   return output;
 }*/
 
+  // See about improving the efficiency of this
   public List<int> GetTilesInRadius(int radius, int origin)
   {
     List<int> returnedTiles = new List<int>();

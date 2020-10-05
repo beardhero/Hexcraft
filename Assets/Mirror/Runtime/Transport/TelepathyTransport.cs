@@ -238,7 +238,6 @@ namespace Mirror
         // common
         public override void Shutdown()
         {
-            Debug.Log("TelepathyTransport Shutdown()");
             client.Disconnect();
             server.Stop();
         }

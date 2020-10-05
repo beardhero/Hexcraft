@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641258, b: 0.5748172, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -266,7 +266,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 325444920}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.301554, y: 5.1824636, z: 0.9149575}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -605,6 +605,11 @@ PrefabInstance:
       propertyPath: updateStep
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1784395690486717434, guid: faa1d40b1e8521140ab3c44a01d9dc5c,
+        type: 3}
+      propertyPath: worldTrans
+      value: 
+      objectReference: {fileID: 325444921}
     - target: {fileID: 1784395690486717435, guid: faa1d40b1e8521140ab3c44a01d9dc5c,
         type: 3}
       propertyPath: m_Name
@@ -851,6 +856,14 @@ PrefabInstance:
     - target: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223, type: 3}
       propertyPath: regularTileSet.typeUVs.Array.data[17].minCoord.y
       value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223, type: 3}
+      propertyPath: regularTileSet.typeUVs.Array.data[9].type
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223, type: 3}
+      propertyPath: regularTileSet.typeUVs.Array.data[2].type
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 106408e00a16546738c43c52d7a99223, type: 3}

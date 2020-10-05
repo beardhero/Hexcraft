@@ -5,29 +5,35 @@ using System.Linq;
 using UnityEngine;
 using Mirror;
 
+public class GlobalSettings{
+    public static bool MirrorOverride = true;  // Set true to disable all networking and test in offline mode
+} 
 public class BlockManager : NetworkBehaviour
 {
-    public static List<HexBlock> blocks;
+    //public static List<HexBlock> blocks;  // blocks was rolled into activeWorld.tiles.blocks
     public static List<GameObject> plates;
     public static List<Mesh> plateMeshes;
     public static List<BlockInfo> plateInfos;
-    public static Dictionary<int, int[]> blocksOnTile; //hex tile index to block index array, ascending order
+    //public static Dictionary<int, int[]> blocksOnTile; //blocksOnTile was converted to activeWorld.tiles.blocks
     public static int[] heightmap; //top block by hex tile index
     public static int avgHeight;
     public static int cloudHeight = 200;
     public static float cloudDensity = .24f;
     public static float rayrange;
 
+    public Transform worldTrans;
     public WorldManager worldManager;
+    static World aW => WorldManager.activeWorld;
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 6;
+    public static int maxHeight = 60;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
     float uvTileHeight = 1.0f / 16f;
 
+    public static float hexScale = 99;
     public static float blockScaleFactor = 0.1f;
     public static float blockQuarterFactor = .025f;
     //private static float _blockScaleFactor = 0.1f;
@@ -35,7 +41,6 @@ public class BlockManager : NetworkBehaviour
 
     [Command(ignoreAuthority = true)]
     public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor) {
-        Debug.Log("placing");
         bool quarterBlock = false;
         if (Input.GetKey(KeyCode.LeftShift))
         {
@@ -43,7 +48,6 @@ public class BlockManager : NetworkBehaviour
         }
         Ray ray = new Ray(rayPos, rayFor);
         RaycastHit hit = new RaycastHit();
-        Debug.Log("ray range " + rayrange);
         if (Physics.Raycast(ray, out hit, rayrange))
         {
             GameObject hitObject = hit.transform.gameObject;
@@ -65,18 +69,19 @@ public class BlockManager : NetworkBehaviour
             {
                 //Find block we hit
                 int tri = hit.triangleIndex;
-                int blockIndex = tri / 24;
+                int blockIndex = tri / 24;      // 24 tris in a block
 
-                HexBlock hb = blocks[info.blockIndexes[blockIndex]];
-                //Debug.Log(info.blockIndexes[blockIndex]);
+                int[] indices = info.blockIndices[blockIndex];
+                HexBlock hb = WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]];  // info.hexBlocks are in triangle index order
                 HexTile tile = WorldManager.activeWorld.tiles[hb.tileIndex];
+
                 tri = tri % 24;
 
-                if (info.blockIndexes.Count >= maxBlocks)
-                {
-                    Debug.Log("Mana full");
-                    return;
-                }
+                // if (info.hexBlocks.Count >= maxBlocks)
+                // {
+                //     Debug.Log("Mana full");
+                //     return;
+                // }
                 //float h = hb.height;
                 //float bH = h - (h * blockScaleFactor);
 
@@ -88,10 +93,8 @@ public class BlockManager : NetworkBehaviour
                         Debug.Log("max height exceeded");
                         return;
                     }
-                    Debug.Log("placing at height " + hb.blockHeight + 1);
-
-                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight + 1, false, quarterBlock);
-                    RpcAddToPlate(plateInd);
+                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight + 1, false, quarterBlock, info.blockIndices.Count);
+                    RpcAddToPlate(plateInd, hb.tileIndex);
                 }
                 if (tri >= 6 && tri < 12) //bot
                 {
@@ -101,8 +104,9 @@ public class BlockManager : NetworkBehaviour
                         Debug.Log("min height exceeded");
                         return;
                     }
-                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight - 1, false, quarterBlock);
-                    RpcAddToPlate(plateInd);
+                    // HexBlock newBlock = new HexBlock();
+                    RpcCreateBlock(hb.tileIndex, toPlace, hb.blockHeight - 1, false, quarterBlock, info.blockIndices.Count);
+                    RpcAddToPlate(plateInd, hb.tileIndex);
                 }
                 if (tri >= 12 && tri < 24) //side
                 {
@@ -121,8 +125,9 @@ public class BlockManager : NetworkBehaviour
                             check = nextCheck;
                         }
                     }
-                    RpcCreateBlock(tile.neighbors[0], toPlace, hb.blockHeight, false, quarterBlock);
-                    RpcAddToPlate(n.plate);
+                    // HexBlock newBlock = new HexBlock();
+                    RpcCreateBlock(tile.neighbors[0], toPlace, hb.blockHeight, false, quarterBlock, info.blockIndices.Count);
+                    RpcAddToPlate(n.plate, tile.neighbors[0]);
                 }
             }
         }
@@ -130,7 +135,6 @@ public class BlockManager : NetworkBehaviour
 
     [Command(ignoreAuthority = true)]
     public void CmdRayRemoveBlock(Vector3 rayPos, Vector3 rayFor) {
-        Debug.Log("removing");
         Ray ray = new Ray(rayPos, rayFor);
         RaycastHit hit = new RaycastHit();
         if (Physics.Raycast(ray, out hit, rayrange))
@@ -156,43 +160,29 @@ public class BlockManager : NetworkBehaviour
 
             if (info != null)
             {
-                int blockInWorld = info.blockIndexes[blockInPlate];
-                if (!blocks[blockInWorld].unbreakable)
+                int[] indices = info.blockIndices[blockInPlate];
+
+                if (!WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]].unbreakable)
                 {
-                    RpcRemoveFromPlate(plateInd, blockInWorld);
+                    RpcRemoveFromPlate(plateInd, indices);
                 }
             }
         }
     }
 
     [ClientRpc]
-    public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
+    public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock, int indexInPlate)
     {
-        blocks.Add(CreateBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock));
-    }
-
-    public HexBlock CreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
-    {
-        if (blocks == null)
-        {
-            blocks = new List<HexBlock>();
-            //blocks = new HexBlock[42 * WorldManager.worldSubdivisions * WorldManager.activeWorld.tiles.Count];
-        }
-        if (blocksOnTile == null)
-        {
-            blocksOnTile = new Dictionary<int, int[]>();
-        }
-        if (!blocksOnTile.ContainsKey(hexTileInd))
-        {
-            blocksOnTile[hexTileInd] = new int[maxHeight];
-        }
-        HexBlock toPlace = new HexBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock);//, isBedrock);
-
-        //add to tile lookup
-        //blocksOnTile[tile.index][blockHeight] = blocks.Count;
-
-        //blocks.Add(toPlace);
-        return toPlace;
+        HexBlock toPlace = new HexBlock();
+        toPlace.tileIndex = hexTileInd;
+        toPlace.type = type;
+        toPlace.blockHeight = blockHeight;
+        toPlace.unbreakable = !isBreakable;
+        toPlace.quarterBlock = quarterBlock;
+        toPlace.index = aW.tiles[hexTileInd].blocks.Count;      // Note this is before it's added below, so no Count-1
+        toPlace.indexInPlate = indexInPlate;
+        toPlace.CreateBlock();
+        WorldManager.activeWorld.tiles[hexTileInd].blocks.Add(toPlace);
     }
 
     public List<GameObject> BlockPlates(World world, TileSet tileSet, GameObject blockPrefab)
@@ -220,7 +210,7 @@ public class BlockManager : NetworkBehaviour
         for (int i = 0; i < world.numberOfPlates; i++)
         {
 
-            output.Add(RenderBlockPlate(blocks, i, blockPrefab));
+            output.Add(RenderBlockPlate(i, blockPrefab));
 
         }
         plates = output;
@@ -228,9 +218,10 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
-    public GameObject RenderBlockPlate(List<HexBlock> blocks, int p, GameObject blockPrefab)
+    public GameObject RenderBlockPlate(int plateIndex, GameObject blockPrefab)  // Q: blockPrefab is actually a plate prefab? And BlockInfo is actually PlateInfo?
     {
         GameObject output = Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
+        output.transform.parent = worldTrans;
 
         output.layer = 0;
         MeshFilter myFilter = output.GetComponent<MeshFilter>();
@@ -241,261 +232,252 @@ public class BlockManager : NetworkBehaviour
         List<int> triangles = new List<int>();
         List<Vector3> normals = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
-        //test
-        //tileSet.tileHeight / texHeight;
-        //TileType type = TileType.Water;
-        //int bNum = 0;
+
         BlockInfo info = output.GetComponent<BlockInfo>();
-        info.plateIndex = p;
-        info.blockIndexes = new List<int>();
-        for (int i = 0; i < blocks.Count; i++)
+        info.plateIndex = plateIndex;
+        info.blockIndices = new List<int[]>();
+
+        int count = -1;
+
+        foreach (HexTile ht in WorldManager.activeWorld.tiles)
         {
-            HexBlock hb = blocks[i];
-            if (hb.plate == p)
+            if (ht.plate == plateIndex)     // Only render this block if it's supposed to go with this plate
             {
                 if (info.plateOrigin == Vector3.zero)
                 {
-                    info.plateOrigin = hb.topCenter;
+                    info.plateOrigin = ht.blocks[0].topCenter;
                 }
-                //bNum++;
-                info.blockIndexes.Add(i);
-                //info.blockCount = bNum;
+                
+                foreach (HexBlock hb in ht.blocks)
+                {
+                    count++;    // This is what matches up vertex numbering to hextile and hexblock
+                    info.blockIndices.Add(new int[]{ht.index,hb.index});
+                    hb.indexInPlate = count;
+
+                    IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
+                    Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
+
+                    // Center of hexagon
+                    int centerIndex = vertices.Count;
+                    //ht.hexagon.uv0i = uvs.Count;
+                    // Triangle 1
+                    vertices.Add(hb.topCenter); //0
+                    normals.Add((origin + hb.topCenter));
+                    uvs.Add(WorldRenderer.uv0 + uvOffset);
+
+                    //ht.hexagon.uv1i = uvs.Count;
+
+                    vertices.Add(hb.topv1); //1
+                    normals.Add((origin + hb.topv1));
+                    uvs.Add(WorldRenderer.uv1 + uvOffset);
+
+                    //ht.hexagon.uv2i = uvs.Count;
+
+                    vertices.Add(hb.topv2); //2
+                    normals.Add((origin + hb.topv2));
+                    uvs.Add(WorldRenderer.uv2 + uvOffset);
+
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+
+                    // T2
+                    //ht.hexagon.uv3i = uvs.Count;
+                    vertices.Add(hb.topv3);
+                    normals.Add((origin + hb.topv3));
+                    uvs.Add(WorldRenderer.uv3 + uvOffset);
+
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+
+                    // T3
+                    //ht.hexagon.uv4i = uvs.Count;
+                    vertices.Add(hb.topv4);
+                    normals.Add((origin + hb.topv4));
+                    uvs.Add(WorldRenderer.uv4 + uvOffset);
+
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+
+                    // T4
+                    //ht.hexagon.uv5i = uvs.Count;
+                    vertices.Add(hb.topv5);
+                    normals.Add((origin + hb.topv5));
+                    uvs.Add(WorldRenderer.uv5 + uvOffset);
+
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+
+                    // T5
+                    //ht.hexagon.uv6i = uvs.Count;
+                    vertices.Add(hb.topv6);
+                    normals.Add((origin + hb.topv6));
+                    uvs.Add(WorldRenderer.uv6 + uvOffset);
+
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+
+                    // T6
+                    //info.topTris.Add(triangles.Count);
+                    triangles.Add(centerIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 6);
+
+                    //////////////////////////// bottom hex
+
+                    // Center of hexagon
+                    int botcenterIndex = vertices.Count;
+                    //ht.hexagon.uv0i = uvs.Count;
+                    // bTriangle 1
+                    vertices.Add(hb.botCenter); //7
+                    normals.Add((origin + hb.botCenter));
+                    uvs.Add(WorldRenderer.uv0 + uvOffset);
+
+                    //ht.hexagon.uv1i = uvs.Count;
+
+                    vertices.Add(hb.botv1); //8
+                    normals.Add((origin + hb.botv1));
+                    uvs.Add(WorldRenderer.uv3 + uvOffset);
+
+                    //ht.hexagon.uv2i = uvs.Count;
+
+                    vertices.Add(hb.botv2);//9
+                    normals.Add((origin + hb.botv2));
+                    uvs.Add(WorldRenderer.uv4 + uvOffset);
+                    //bT1
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 2);
 
 
-                //info.tileIndex = hb.tileIndex;
-                //info.topTris = new List<int>();
-                //info.botTris = new List<int>();
-                //info.sideTris = new List<int>();
+                    // bT2
+                    //ht.hexagon.uv3i = uvs.Count;
+                    vertices.Add(hb.botv3);//10
+                    normals.Add((origin + hb.botv3));
+                    uvs.Add(WorldRenderer.uv5 + uvOffset);
 
-                IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
-                Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
-
-                // Center of hexagon
-                int centerIndex = vertices.Count;
-                //ht.hexagon.uv0i = uvs.Count;
-                // Triangle 1
-                vertices.Add(hb.topCenter); //0
-                normals.Add((origin + hb.topCenter));
-                uvs.Add(WorldRenderer.uv0 + uvOffset);
-
-                //ht.hexagon.uv1i = uvs.Count;
-
-                vertices.Add(hb.topv1); //1
-                normals.Add((origin + hb.topv1));
-                uvs.Add(WorldRenderer.uv1 + uvOffset);
-
-                //ht.hexagon.uv2i = uvs.Count;
-
-                vertices.Add(hb.topv2); //2
-                normals.Add((origin + hb.topv2));
-                uvs.Add(WorldRenderer.uv2 + uvOffset);
-
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
-
-                // T2
-                //ht.hexagon.uv3i = uvs.Count;
-                vertices.Add(hb.topv3);
-                normals.Add((origin + hb.topv3));
-                uvs.Add(WorldRenderer.uv3 + uvOffset);
-
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
-
-                // T3
-                //ht.hexagon.uv4i = uvs.Count;
-                vertices.Add(hb.topv4);
-                normals.Add((origin + hb.topv4));
-                uvs.Add(WorldRenderer.uv4 + uvOffset);
-
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
-
-                // T4
-                //ht.hexagon.uv5i = uvs.Count;
-                vertices.Add(hb.topv5);
-                normals.Add((origin + hb.topv5));
-                uvs.Add(WorldRenderer.uv5 + uvOffset);
-
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
-
-                // T5
-                //ht.hexagon.uv6i = uvs.Count;
-                vertices.Add(hb.topv6);
-                normals.Add((origin + hb.topv6));
-                uvs.Add(WorldRenderer.uv6 + uvOffset);
-
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
-
-                // T6
-                //info.topTris.Add(triangles.Count);
-                triangles.Add(centerIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 6);
-
-                //////////////////////////// bottom hex
-
-                // Center of hexagon
-                int botcenterIndex = vertices.Count;
-                //ht.hexagon.uv0i = uvs.Count;
-                // bTriangle 1
-                vertices.Add(hb.botCenter); //7
-                normals.Add((origin + hb.botCenter));
-                uvs.Add(WorldRenderer.uv0 + uvOffset);
-
-                //ht.hexagon.uv1i = uvs.Count;
-
-                vertices.Add(hb.botv1); //8
-                normals.Add((origin + hb.botv1));
-                uvs.Add(WorldRenderer.uv3 + uvOffset);
-
-                //ht.hexagon.uv2i = uvs.Count;
-
-                vertices.Add(hb.botv2);//9
-                normals.Add((origin + hb.botv2));
-                uvs.Add(WorldRenderer.uv4 + uvOffset);
-                //bT1
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 2);
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 2);
 
 
-                // bT2
-                //ht.hexagon.uv3i = uvs.Count;
-                vertices.Add(hb.botv3);//10
-                normals.Add((origin + hb.botv3));
-                uvs.Add(WorldRenderer.uv5 + uvOffset);
+                    // bT3
+                    //ht.hexagon.uv4i = uvs.Count;
+                    vertices.Add(hb.botv4);//11
+                    normals.Add((origin + hb.botv4));
+                    uvs.Add(WorldRenderer.uv6 + uvOffset);
 
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 2);
-
-
-                // bT3
-                //ht.hexagon.uv4i = uvs.Count;
-                vertices.Add(hb.botv4);//11
-                normals.Add((origin + hb.botv4));
-                uvs.Add(WorldRenderer.uv6 + uvOffset);
-
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 2);
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 2);
 
 
-                // bT4
-                //ht.hexagon.uv5i = uvs.Count; 
-                vertices.Add(hb.botv5); //12
-                normals.Add((origin + hb.botv5));
-                uvs.Add(WorldRenderer.uv1 + uvOffset);
+                    // bT4
+                    //ht.hexagon.uv5i = uvs.Count; 
+                    vertices.Add(hb.botv5); //12
+                    normals.Add((origin + hb.botv5));
+                    uvs.Add(WorldRenderer.uv1 + uvOffset);
 
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 2);
-
-
-                // bT5
-                //ht.hexagon.uv6i = uvs.Count;
-                vertices.Add(hb.botv6); //13
-                normals.Add((origin + hb.botv6));
-                uvs.Add(WorldRenderer.uv2 + uvOffset);
-
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 2);
-
-                // bT6
-                //info.botTris.Add(triangles.Count);
-                triangles.Add(botcenterIndex);
-                triangles.Add(vertices.Count - 6);
-                triangles.Add(vertices.Count - 1);
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 2);
 
 
-                //sides
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 13);
-                triangles.Add(vertices.Count - 8);
-                triangles.Add(vertices.Count - 6);
+                    // bT5
+                    //ht.hexagon.uv6i = uvs.Count;
+                    vertices.Add(hb.botv6); //13
+                    normals.Add((origin + hb.botv6));
+                    uvs.Add(WorldRenderer.uv2 + uvOffset);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 8);
-                triangles.Add(vertices.Count - 1);
-                triangles.Add(vertices.Count - 6);
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 2);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 12);
-                triangles.Add(vertices.Count - 13);
-                triangles.Add(vertices.Count - 5);
+                    // bT6
+                    //info.botTris.Add(triangles.Count);
+                    triangles.Add(botcenterIndex);
+                    triangles.Add(vertices.Count - 6);
+                    triangles.Add(vertices.Count - 1);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 13);
-                triangles.Add(vertices.Count - 6);
-                triangles.Add(vertices.Count - 5);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 11);
-                triangles.Add(vertices.Count - 12);
-                triangles.Add(vertices.Count - 4);
+                    //sides
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 13);
+                    triangles.Add(vertices.Count - 8);
+                    triangles.Add(vertices.Count - 6);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 12);
-                triangles.Add(vertices.Count - 5);
-                triangles.Add(vertices.Count - 4);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 8);
+                    triangles.Add(vertices.Count - 1);
+                    triangles.Add(vertices.Count - 6);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 10);
-                triangles.Add(vertices.Count - 11);
-                triangles.Add(vertices.Count - 3);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 12);
+                    triangles.Add(vertices.Count - 13);
+                    triangles.Add(vertices.Count - 5);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 11);
-                triangles.Add(vertices.Count - 4);
-                triangles.Add(vertices.Count - 3);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 13);
+                    triangles.Add(vertices.Count - 6);
+                    triangles.Add(vertices.Count - 5);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 9);
-                triangles.Add(vertices.Count - 10);
-                triangles.Add(vertices.Count - 2);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 11);
+                    triangles.Add(vertices.Count - 12);
+                    triangles.Add(vertices.Count - 4);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 10);
-                triangles.Add(vertices.Count - 3);
-                triangles.Add(vertices.Count - 2);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 12);
+                    triangles.Add(vertices.Count - 5);
+                    triangles.Add(vertices.Count - 4);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 8);
-                triangles.Add(vertices.Count - 9);
-                triangles.Add(vertices.Count - 1);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 10);
+                    triangles.Add(vertices.Count - 11);
+                    triangles.Add(vertices.Count - 3);
 
-                //info.sideTris.Add(triangles.Count);
-                triangles.Add(vertices.Count - 9);
-                triangles.Add(vertices.Count - 2);
-                triangles.Add(vertices.Count - 1);
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 11);
+                    triangles.Add(vertices.Count - 4);
+                    triangles.Add(vertices.Count - 3);
+
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 9);
+                    triangles.Add(vertices.Count - 10);
+                    triangles.Add(vertices.Count - 2);
+
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 10);
+                    triangles.Add(vertices.Count - 3);
+                    triangles.Add(vertices.Count - 2);
+
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 8);
+                    triangles.Add(vertices.Count - 9);
+                    triangles.Add(vertices.Count - 1);
+
+                    //info.sideTris.Add(triangles.Count);
+                    triangles.Add(vertices.Count - 9);
+                    triangles.Add(vertices.Count - 2);
+                    triangles.Add(vertices.Count - 1);
+                }
             }
         }
-        //Debug.Log("plate " + p + " block count " + info.blockIndexes.Count);
-        //@BUG fix the plate generation, quick fix for this plateOrigin bug
-        /*if (info.plateOrigin == Vector3.zero)
-        {
-            info.plateOrigin = blocks[info.blockIndexes[0]].topCenter;
-        }*/
-        ///
+
         Mesh m = new Mesh();
         m.vertices = vertices.ToArray();
         m.triangles = triangles.ToArray();
@@ -512,10 +494,13 @@ public class BlockManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcAddToPlate(int plateId)
+    public void RpcAddToPlate(int plateId, int hexTileInd)
     {
-        int blockInd = blocks.Count - 1;
+        HexBlock hb = WorldManager.activeWorld.tiles[hexTileInd].blocks.Last();   // We know that this is always called after RPCCreatBlock and so the last block is what we want
+
         GameObject plate = plates[plateId];
+        BlockInfo info = plate.GetComponent<BlockInfo>();
+
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
@@ -526,20 +511,14 @@ public class BlockManager : NetworkBehaviour
         List<Vector3> normals = m.normals.ToList();
         List<Vector2> uvs = m.uv.ToList();
 
-        BlockInfo info = plate.GetComponent<BlockInfo>();
-        if (info.blockIndexes.Count >= maxBlocks)
-        {
-            Debug.Log("Mana full");
-            return;
-        }
-        info.blockIndexes.Add(blockInd);
-        Debug.Log("block index: " + blockInd);
-        HexBlock hb = blocks[blockInd];
-        //info.blockCount++;
-        //info.tileIndex = hb.tileIndex;
-        //info.topTris = new List<int>();
-        //info.botTris = new List<int>();
-        //info.sideTris = new List<int>();
+        
+        // if (info.hexBlocks.Count >= maxBlocks)
+        // {
+        //     Debug.Log("Mana full");
+        //     return;
+        // }
+        
+        info.blockIndices.Add(new int[]{hexTileInd, hb.indexInPlate});
 
         IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
         Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
@@ -773,16 +752,17 @@ public class BlockManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcRemoveFromPlate(int plateInd, int blockInWorld)
+    public void RpcRemoveFromPlate(int plateInd, int[] indices)
     {
+        Debug.Log("Plate index: "+plateInd+" | index in plate block to remove: "+indices);
+
         GameObject plate = plates[plateInd];
-        //HexBlock hb = blocks[block];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
 
         BlockInfo info = plate.GetComponent<BlockInfo>();
-        int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
+        HexBlock blockInWorld = WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]];
 
         List<int> triangles = m.triangles.ToList();
         List<Vector3> vertices = m.vertices.ToList();
@@ -793,7 +773,7 @@ public class BlockManager : NetworkBehaviour
         //remove vertices
         for (int v = vertices.Count - 1; v >= 0; v--)
         {
-            if (v >= blockInPlate * 14 && v < (blockInPlate + 1) * 14)
+            if (v >= blockInWorld.indexInPlate * 14 && v < (blockInWorld.indexInPlate + 1) * 14)
             {
                 //Debug.Log("removing vertex " + v);
                 vertices.RemoveAt(v);
@@ -807,7 +787,7 @@ public class BlockManager : NetworkBehaviour
 
         for (int i = triangles.Count - 1; i >= 0; i--)
         {
-            if (i >= (blockInPlate + 1) * 24 * 3)
+            if (i >= (blockInWorld.indexInPlate + 1) * 24 * 3)
             {
                 //Debug.Log("subtracting tri" + i);
                 //Debug.Log("before " + triangles[i]);
@@ -816,7 +796,7 @@ public class BlockManager : NetworkBehaviour
                 //{ Debug.Log("fucked up tri" + triangles[i]); }
                 //Debug.Log("after " + triangles[i]);
             }
-            if (i >= blockInPlate * 24 * 3 && i < (blockInPlate + 1) * 24 * 3)
+            if (i >= blockInWorld.indexInPlate * 24 * 3 && i < (blockInWorld.indexInPlate + 1) * 24 * 3)
             {
                 // Debug.Log("removing triangle " + i);
                 //m.triangles[i] = -1;
@@ -829,11 +809,12 @@ public class BlockManager : NetworkBehaviour
         foreach (GameObject p in plates)
         {
             BlockInfo binfo = p.GetComponent<BlockInfo>();
-            for (int r = 0; r < binfo.blockIndexes.Count; r++)
+            for (int r = 0; r < binfo.blockIndices.Count; r++)
             {
-                if (binfo.blockIndexes[r] > blockInWorld)
+                change to active world ref
+                if (binfo.blockIndices[r].indexInPlate > blockInWorld.indexInPlate)
                 {
-                    binfo.blockIndexes[r]--;
+                    binfo.blockIndices[r].indexInPlate--;
                 }
             }
         }
@@ -849,8 +830,9 @@ public class BlockManager : NetworkBehaviour
             }
         }*/
 
-        info.blockIndexes.RemoveAt(blockInPlate);
-        blocks.RemoveAt(blockInWorld);
+        info.hexBlocks.Remove(blockInWorld);
+        WorldManager.activeWorld.tiles[blockInWorld.tileIndex].blocks.Remove(blockInWorld);
+
         //reset mesh
         Mesh newmesh = new Mesh();
         newmesh.vertices = vertices.ToArray();
@@ -865,168 +847,119 @@ public class BlockManager : NetworkBehaviour
         mc.sharedMesh = m;
     }
 
-    public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
-    {
-        return blocks[blocksOnTile[tile][blockHeight]];
-    }
-    public void Biomes()
-    {
-        //set the initial biomes
-        for (int i = 0; i < blocksOnTile.Count; i++)
-        {
-            int l = blocksOnTile[i].Length;
-            for (int b = 0; b < l; b++)
-            {
-                if (b == l - 1)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Earth);
-                }
-
-                if (b <= l - 2 && b >= l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Arbor);
-                }
-
-                if (b < l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Metal);
-                }
-            }
-        }
-    }
     public void Populate(string seed)
     {
-        Debug.Log("GETTING INTO POPULATE");
-        //set the surface heights
-        heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
-        foreach (int h in heightmap)
+        // Set the surface heights
+        Perlin perlin = new Perlin();
+        perlin.Frequency = 0.0001f;//.0000002f;
+        perlin.Lacunarity = 1.2f;//2.4f;      // How much the frequency increases with each octave
+        perlin.Persistence = 1.1f;//.24f;  // How much the amplitude increases with each octave
+        perlin.OctaveCount = 6;//6;
+        float amplitude = maxHeight/12;//512f;
+        perlin.Seed = BitConverter.ToInt32(SeedHandler.StringToBytes(seed), 0);
+        heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed), perlin, amplitude);
+
+        for (int h=0; h<heightmap.Length; h++)
         {
-            avgHeight += h;
+            avgHeight += heightmap[h];
+            heightmap[h] += maxHeight/2;       // This is necessary to offset the perlin noise to compensate for negative values
         }
         avgHeight /= heightmap.Length;
         //int[] noBlock = new int[blocks.Count];
-        PlaceBlocksIfNotInCave(SeedHandler.StringToBytes(seed));
+
+        //PerlinCaves(perlin, amplitude);
+
+        AssignTypes();
+        PlaceBlocks();
+
         //RefineWorld(SeedHandler.StringToBytes(seed));
     }
-    public int[] GenerateHeightmap(byte[] seed)
+    public int[] GenerateHeightmap(byte[] seed, Perlin perlin, float amplitude)
     {
         Debug.Log("seed length" + seed.Length);
-        int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
+        int[] workingMap = new int[WorldManager.activeWorld.tiles.Count];
 
-        Perlin perlin = new Perlin();
-        float sc = 99;
-        float f = 0.0000012f;
-        float l = 2.4f;
-        float p = .2f;
-        int o = 6;
-        float amplitude = 512f;
         //float glyphProb = 64;
-        for (int i = 0; i < seed.Length; i++)
-        {
-            UnityEngine.Random.InitState(seed[i]);
-            perlin.Seed = seed[i];
-            //initialize 
-            if (i == 0)
-            {
-                for (int h = 0; h < hmap.Length; h++)
-                {
-                    hmap[h] = 64;
-                }
-            }
-            PerlinHeightmapAdjust(hmap, perlin, f, l, p, amplitude, o, sc);
-        }
+        // for (int i = 0; i < seed.Length; i++)
+        // {
+        //     UnityEngine.Random.InitState(seed[i]);
+        //     perlin.Seed = seed[i];
+        //     //initialize 
+        //     if (i == 0)
+        //     {
+        //         for (int h = 0; h < heightMap.Length; h++)
+        //         {
+        //             heightMap[h] = 64;
+        //         }
+        //     }
+        //     PerlinHeightmapAdjust(heightMap, perlin, amplitude);
+        // }
 
-        return hmap;
+        PerlinHeightmapAdjust(workingMap, perlin, amplitude);
+
+        return workingMap;
     }
-    public void PerlinHeightmapAdjust(int[] hmap, Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
+    public void PerlinHeightmapAdjust(int[] workingMap, Perlin perlin, float amplitude)
     {
-        perlin.Frequency = frequency;
-        perlin.Lacunarity = lacunarity;
-        perlin.Persistence = persistence;
-        perlin.OctaveCount = octaves;
         for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
         {
             HexTile ht = WorldManager.activeWorld.tiles[i];
             //Get next height
-            double perlinVal = perlin.GetValue(ht.hexagon.center.x * scale, ht.hexagon.center.y * scale, ht.hexagon.center.z * scale);
-            double v1 = perlinVal * amplitude;//*i; 
+            double perlinVal = perlin.GetValue(ht.hexagon.center.x * hexScale, ht.hexagon.center.y * hexScale, ht.hexagon.center.z * hexScale);
+            double v1 = perlinVal * amplitude; 
             int h = (int)v1;
-            hmap[i] += h;
-            hmap[i] %= 256;
+            //heightMap[i] += h;
+            //heightMap[i] %= 256;
+            workingMap[i] = h;
+            if (h > 255)
+                Debug.LogError("Tile #"+i+" exceeds 256: "+h);
         }
     }
 
-    public void PlaceBlocksIfNotInCave(byte[] seed)
-    {
-        Perlin perlin = new Perlin();
-        float sc = 99f;
-        float f = .0000002f;
-        float l = 2.4f;
-        float p = .24f;
-        int o = 6;
-        float amplitude = 512f;
-
-        int perl = BitConverter.ToInt32(seed, 0);
-        perlin.Seed = perl;
-        PerlinCaves(perlin, f, l, p, amplitude, o, sc);
-    }
-
-    public void PerlinCaves(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
-    {
-        perlin.Frequency = frequency;
-        perlin.Lacunarity = lacunarity;
-        perlin.Persistence = persistence;
-        perlin.OctaveCount = octaves;
-        double pAvg = 0;
-        int it = 0;
+    void AssignTypes(){
+        // Assigns types purely by height (WIP)
         foreach (HexTile ht in WorldManager.activeWorld.tiles)
-        {
-            bool bedrock;
-            bool quarterBlock = false;
-            for (int i = 0; i < BlockManager.maxHeight; i++)
+        {            
+            ht.blocks = new List<HexBlock>();
+            // Iterate from 0 (bedrock) up to heightmap[ht.index] (top layer)
+            int top = BlockManager.heightmap[ht.index];
+            if (top<0){
+                Debug.LogError("heightmap got negative value: "+top);
+                top = 1;
+            }
+            for (int i = 0; i < top; i++)
             {
-                if (i == 0)
-                {
-                    bedrock = true;
-                }
+                HexBlock blok = new HexBlock();
+                blok.blockHeight = i;
+                blok.tileIndex = ht.index;
+                blok.index = i;
+
+                if (i==0)
+                    blok.type = TileType.Bedrock;
+                else if (i==top)
+                    blok.type = TileType.Arbor;
+                else if (top-6 > i && i < top)
+                    blok.type = TileType.Earth;
                 else
-                {
-                    bedrock = false;
-                }
-                int h = BlockManager.heightmap[ht.index];
-                if (i <= h)
-                {
-                    TileType t = TileType.Metal;
-                    //inital biomes
-                    if (i == h)
-                    {
-                        t = TileType.Earth;
-                        quarterBlock = true;
-                    }
-                    if (i < h && i >= h - 6)
-                    {
-                        t = TileType.Arbor;
-                    }
-                    HexBlock hb = CreateBlock(ht.index, t, i, bedrock, quarterBlock);
-                    double perlinVal = perlin.GetValue(hb.topCenter.x * scale, hb.topCenter.y * scale, hb.topCenter.z * scale);// * amplitude;
-                    
-                    pAvg += perlinVal;
-                    it++;
-                    //Debug.Log(perlinVal);
-                    if (perlinVal > 0 || hb.type != TileType.Metal || hb.unbreakable)
-                    {
-                        blocks.Add(hb);
-                        blocksOnTile[ht.index][i] = blocks.Count - 1;
-                    }
-                }
+                    blok.type = TileType.Metal;
+
+                ht.blocks.Add(blok);
             }
         }
-        Debug.Log(pAvg / it);
     }
 
-    public double GetPerlinForBlock(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
-    {
-        return 1;
+    void PlaceBlocks(){
+        foreach (HexTile ht in WorldManager.activeWorld.tiles)
+        {
+            int top = BlockManager.heightmap[ht.index];
+            foreach (HexBlock blok in ht.blocks)
+            {
+               blok.quarterBlock = blok.blockHeight >= top-1;
+                blok.unbreakable = false;
+
+                blok.CreateBlock();
+            }
+        }
     }
 }
 

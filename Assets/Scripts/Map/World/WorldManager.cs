@@ -25,7 +25,7 @@ public class WorldManager : MonoBehaviour
   public static int uvHeight;
   public bool b;
   public bool randomAnt;
-  public TileType element = TileType.Gray;
+  public TileType element;  // Defaults to none (which is gray)
   public byte[] seed;
   
   // === Private ===
@@ -145,7 +145,7 @@ public class WorldManager : MonoBehaviour
           //ht.passable = false;
           switch(ht.type)
           {
-            case TileType.Gray:
+            case TileType.None:
               g = misc[ht.objectToPlace]; 
              Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
             case TileType.Water: 
@@ -219,9 +219,8 @@ public class WorldManager : MonoBehaviour
         //place bedrock layer of blocks
         //generate heightmap from seed
         string s = "seedtestspeedtest";
-        Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
         bM.Populate(s);
-    bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
+        bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
         //bM.Biomes();
         //start clouds
         //StartCoroutine(Clouds());
@@ -917,7 +916,7 @@ public class WorldManager : MonoBehaviour
   {
     foreach(HexTile ht in activeWorld.tiles)
     {
-      ht.typeToSet = TileType.Gray;//ht.type;
+      ht.typeToSet = TileType.None;
       int s = 0;
       foreach(int i in ht.neighbors)
       {
@@ -1066,7 +1065,7 @@ public class WorldManager : MonoBehaviour
             default: break;
         }
       }
-      if((ht.type == TileType.Light || ht.type == TileType.Gray) && s == 4)
+      if((ht.type == TileType.Light || ht.type == TileType.None) && s == 4)
       {
         ht.typeToSet = TileType.Fire;
       }
@@ -1139,7 +1138,7 @@ public class WorldManager : MonoBehaviour
           t = activeWorld.tiles[Random.Range(0,activeWorld.tiles.Count)];
         }
         */
-        if(t.type != TileType.Gray && t.passable == true)
+        if(t.type != TileType.None && t.passable == true)
         {
           GameObject g = elementals[Random.Range(0,elementals.Length)] as GameObject;
           //Instantiate(g, Vector3.zero, Quaternion.identity);

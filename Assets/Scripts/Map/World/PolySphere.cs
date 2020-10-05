@@ -380,13 +380,13 @@ public class PolySphere
             {
               //land
               //max height and adjust height with drift component in center direction, (a dot b)/|b|
-              st.type = TileType.Gray;
+              st.type = TileType.None;
               st.height += (pressureOnTile);
             }
             if (!p.oceanic && neighbor.oceanic)
             {
               //subducted, add a little more to the land at first then drop off
-              st.type = TileType.Gray;
+              st.type = TileType.None;
               st.height = avgTileHeight + .02f;
               p.subducted = true;
               st.height += (pressureOnTile);
@@ -450,7 +450,7 @@ public class PolySphere
           }
           if (!p.oceanic)
           {
-            stn.type = TileType.Gray;
+            stn.type = TileType.None;
             stn.height += (pressureOnTile);
           }
           break; //one neighbor per tile

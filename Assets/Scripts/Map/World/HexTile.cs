@@ -6,13 +6,14 @@ using System.Collections.Generic;
 [Serializable]
 public class HexTile
 {
+  public List<HexBlock> blocks;
   public int index;
   public int plate = -1;
   public int generation = 0;
   public float height = 1;
   string terrainType;
   public Hexagon hexagon;
-  public TileType type = TileType.Gray;
+  public TileType type;		//Defaults to "none"
   public TileType typeToSet;
   public int objectToPlace = -1;
   public List<int> neighbors;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 
+
 public class HexPlayerController : NetworkBehaviour {
 	Rigidbody rigbody;
 	Transform trans;
@@ -43,7 +44,8 @@ public class HexPlayerController : NetworkBehaviour {
     //public Runebook runeBook;
     // Use this for initialization
     void Start () {
-        if (isLocalPlayer)
+
+        if (isLocalPlayer)      // Returns true when OverrideMirror = true
         {
             // This hides the cursor
             Cursor.lockState = CursorLockMode.Locked;
@@ -62,7 +64,7 @@ public class HexPlayerController : NetworkBehaviour {
             animator.enabled = true;
             animator.Play("Idle");
             blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
-            //trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
+            trans.position = aW.tiles[spawnTile].blocks[aW.tiles[spawnTile].blocks.Count-1].topCenter;
             //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
            
             //runebook test
