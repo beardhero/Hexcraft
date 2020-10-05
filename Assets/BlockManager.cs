@@ -161,23 +161,25 @@ public class BlockManager : NetworkBehaviour
             if (info != null)
             {
                 int[] indices = info.blockIndices[blockInPlate];
+                Debug.Log(indices[0]+","+indices[1]);
+                Debug.Log("unbreakable: "+WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]].unbreakable);
 
                 if (!WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]].unbreakable)
                 {
-                    RpcRemoveFromPlate(plateInd, indices);
+                    RpcRemoveFromPlate(plateInd, blockInPlate);
                 }
             }
         }
     }
 
     [ClientRpc]
-    public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock, int indexInPlate)
+    public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool unbreakable, bool quarterBlock, int indexInPlate)
     {
         HexBlock toPlace = new HexBlock();
         toPlace.tileIndex = hexTileInd;
         toPlace.type = type;
         toPlace.blockHeight = blockHeight;
-        toPlace.unbreakable = !isBreakable;
+        toPlace.unbreakable = unbreakable;
         toPlace.quarterBlock = quarterBlock;
         toPlace.index = aW.tiles[hexTileInd].blocks.Count;      // Note this is before it's added below, so no Count-1
         toPlace.indexInPlate = indexInPlate;
@@ -518,7 +520,8 @@ public class BlockManager : NetworkBehaviour
         //     return;
         // }
         
-        info.blockIndices.Add(new int[]{hexTileInd, hb.indexInPlate});
+        Debug.Log("index: "+hb.index+" | plateIndex: "+hb.indexInPlate);
+        info.blockIndices.Add(new int[]{hexTileInd, hb.index});
 
         IntCoord uvCoord = worldManager.regularTileSet.GetUVForType(hb.type);
         Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
@@ -752,17 +755,17 @@ public class BlockManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcRemoveFromPlate(int plateInd, int[] indices)
+    public void RpcRemoveFromPlate(int plateInd, int indicesIndex)
     {
-        Debug.Log("Plate index: "+plateInd+" | index in plate block to remove: "+indices);
-
         GameObject plate = plates[plateInd];
         MeshFilter mf = plate.GetComponent<MeshFilter>();
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
 
         BlockInfo info = plate.GetComponent<BlockInfo>();
+        int[] indices = info.blockIndices[indicesIndex];
         HexBlock blockInWorld = WorldManager.activeWorld.tiles[indices[0]].blocks[indices[1]];
+        Debug.Log("removing indexInPlate "+blockInWorld.indexInPlate);
 
         List<int> triangles = m.triangles.ToList();
         List<Vector3> vertices = m.vertices.ToList();
@@ -773,7 +776,7 @@ public class BlockManager : NetworkBehaviour
         //remove vertices
         for (int v = vertices.Count - 1; v >= 0; v--)
         {
-            if (v >= blockInWorld.indexInPlate * 14 && v < (blockInWorld.indexInPlate + 1) * 14)
+            if (v >= indicesIndex * 14 && v < (indicesIndex + 1) * 14)
             {
                 //Debug.Log("removing vertex " + v);
                 vertices.RemoveAt(v);
@@ -787,7 +790,7 @@ public class BlockManager : NetworkBehaviour
 
         for (int i = triangles.Count - 1; i >= 0; i--)
         {
-            if (i >= (blockInWorld.indexInPlate + 1) * 24 * 3)
+            if (i >= (indicesIndex + 1) * 24 * 3)
             {
                 //Debug.Log("subtracting tri" + i);
                 //Debug.Log("before " + triangles[i]);
@@ -796,7 +799,7 @@ public class BlockManager : NetworkBehaviour
                 //{ Debug.Log("fucked up tri" + triangles[i]); }
                 //Debug.Log("after " + triangles[i]);
             }
-            if (i >= blockInWorld.indexInPlate * 24 * 3 && i < (blockInWorld.indexInPlate + 1) * 24 * 3)
+            if (i >= indicesIndex * 24 * 3 && i < (indicesIndex + 1) * 24 * 3)
             {
                 // Debug.Log("removing triangle " + i);
                 //m.triangles[i] = -1;
@@ -806,18 +809,25 @@ public class BlockManager : NetworkBehaviour
 
         //clean up block lists
         //decrement blockindex
-        foreach (GameObject p in plates)
-        {
-            BlockInfo binfo = p.GetComponent<BlockInfo>();
+        // foreach (GameObject p in plates)        // Do we need to alter every plate index?
+        // {
+            BlockInfo binfo = plate.GetComponent<BlockInfo>();
             for (int r = 0; r < binfo.blockIndices.Count; r++)
             {
-                change to active world ref
-                if (binfo.blockIndices[r].indexInPlate > blockInWorld.indexInPlate)
-                {
-                    binfo.blockIndices[r].indexInPlate--;
+                // Decrement all plate indexes above the one being removed
+                if (WorldManager.activeWorld.tiles[binfo.blockIndices[r][0]].blocks[binfo.blockIndices[r][1]].indexInPlate > indicesIndex){
+                    WorldManager.activeWorld.tiles[binfo.blockIndices[r][0]].blocks[binfo.blockIndices[r][1]].indexInPlate--;
                 }
+
+                // Now we alter tile index and the blockInfo index
+                //   Skip checking blocks not in the same column or below the altered block
+                if (binfo.blockIndices[r][0] != indices[0] || binfo.blockIndices[r][1] < indices[1])  
+                    continue;
+
+                WorldManager.activeWorld.tiles[binfo.blockIndices[r][0]].blocks[binfo.blockIndices[r][1]].index--;
+                binfo.blockIndices[r][1]--;
             }
-        }
+        //}
         /*decrement tile lookup
         for (int t = 0; t < WorldManager.activeWorld.tiles.Count; t++)
         {
@@ -830,8 +840,8 @@ public class BlockManager : NetworkBehaviour
             }
         }*/
 
-        info.hexBlocks.Remove(blockInWorld);
-        WorldManager.activeWorld.tiles[blockInWorld.tileIndex].blocks.Remove(blockInWorld);
+        WorldManager.activeWorld.tiles[indices[0]].blocks.RemoveAt(indices[1]);
+        info.blockIndices.RemoveAt(indicesIndex);
 
         //reset mesh
         Mesh newmesh = new Mesh();
