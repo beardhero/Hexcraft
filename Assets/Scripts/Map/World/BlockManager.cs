@@ -22,7 +22,7 @@ public class BlockManager : NetworkBehaviour
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 256;
+    public static int maxHeight = 128;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
@@ -1330,7 +1330,7 @@ public class BlockManager : NetworkBehaviour
     {
         Perlin perlin = new Perlin();
         float sc = 99f;
-        float f = .0000002f;
+        float f = .000002f;
         float l = 2.4f;
         float p = .24f;
         int o = 6;
@@ -1383,7 +1383,7 @@ public class BlockManager : NetworkBehaviour
                     pAvg += perlinVal;
                     it++;
                     //Debug.Log(perlinVal);
-                    if (perlinVal > 0 || hb.type != TileType.Metal || hb.unbreakable)
+                    if (/*perlinVal > 0 ||*/ hb.type != TileType.Metal || hb.unbreakable)
                     {
                         blocks.Add(hb);
                         blocksOnTile[ht.index][i] = blocks.Count - 1;
