@@ -1266,7 +1266,6 @@ public class BlockManager : NetworkBehaviour
     }
     public void Populate(string seed)
     {
-        Debug.Log("GETTING INTO POPULATE");
         //set the surface heights
         heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
         foreach (int h in heightmap)
@@ -1366,24 +1365,13 @@ public class BlockManager : NetworkBehaviour
                 int h = heightmap[ht.index];
                 if (i <= h)
                 {
-                    TileType t = TileType.Metal;
-                    //inital biomes
-                    if (i == h)
-                    {
-                        t = TileType.Earth;
-                        quarterBlock = true;
-                    }
-                    if (i < h && i >= h - 6)
-                    {
-                        t = TileType.Arbor;
-                    }
-                    HexBlock hb = CreateBlock(ht.index, t, i, bedrock, quarterBlock);
+                    HexBlock hb = CreateBlock(ht.index, ht.type, i, bedrock, quarterBlock);
                     double perlinVal = perlin.GetValue(hb.topCenter.x * scale, hb.topCenter.y * scale, hb.topCenter.z * scale);// * amplitude;
                     
                     pAvg += perlinVal;
                     it++;
                     //Debug.Log(perlinVal);
-                    if (/*perlinVal > 0 ||*/ hb.type != TileType.Metal || hb.unbreakable)
+                    if (hb.blockHeight >= heightmap[ht.index] - 6)//*perlinVal > 0 ||*/ hb.type != TileType.Metal || hb.unbreakable)
                     {
                         blocks.Add(hb);
                         blocksOnTile[ht.index][i] = blocks.Count - 1;
