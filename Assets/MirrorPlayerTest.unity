@@ -1133,7 +1133,7 @@ PrefabInstance:
       objectReference: {fileID: 100000, guid: bcae914220acd4907840a029bb9d9aec, type: 2}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: beginningState
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: blockPrefab

@@ -5,6 +5,7 @@ using System.Linq;
 
 public class PolySphere
 {
+  public List<Biome> biomes;
   public static Random rnd = new Random();
   //Initial icosahedron coords
   public static List<Vector3> icoCoords;
@@ -50,8 +51,11 @@ public class PolySphere
     //AvgHeight();
     //CorrectSunkenTiles();
     TectonicPlates(); //Populates plates and creates stress forces between them.
-    RandomPlateAttunement();
+    //RandomPlateAttunement();    // old way
 	  
+    biomes = PlateBiomeGrouping(15);   // This groups n neighboring plates into mega-plates that we now call Biomes
+    Debug.Log("Grouped "+plates.Count+" plates into "+biomes.Count+" biomes.");
+    RandomBiomeAttunement();
     //CacheTris();
     CacheHexes(); //Converts to HexTiles for serialization
     
@@ -60,6 +64,88 @@ public class PolySphere
     //HeightSeed();
   }
  
+  List<Biome> PlateBiomeGrouping(int neighborCount)
+  {
+    // Look through all the boundary tiles to see neighboring plates
+    // Make plate neighbors out of them by setting a biomeID
+    // After adding neighborCount plates to a biome, create another biome
+
+    List<Biome> output = new List<Biome>();
+    int biomeCount = 0;
+
+    foreach (Plate plate in plates)
+    {
+      List<int> neighborPlateIndexes = new List<int>();
+      if (plate.biomeIndex == -1)  // This plate doesn't have a biome yet so we add it
+      {
+        neighborPlateIndexes.Add(plate.index);
+      }
+      // Now we continue to check its neighbors
+
+      // Find a neighbor from this plate's boundary
+      foreach (SphereTile tile in plate.boundary){
+        foreach (SphereTile neighbTile in tile.neighborList.Distinct())
+        {
+          // Only add if the plate we're checking is not yet in a biome list
+          if (plates[neighbTile.plate].biomeIndex == -1 && !neighborPlateIndexes.Contains(neighbTile.plate))
+          {
+            Debug.Log("adding plate "+neighbTile.plate+" as a neighbor of plate "+plate.index);
+            neighborPlateIndexes.Add(neighbTile.plate);
+            if (neighborPlateIndexes.Count >= neighborCount)
+              break;
+          }
+        }
+        if (neighborPlateIndexes.Count >= neighborCount)
+          break;
+      }
+
+      // Create a new Biome and assign everything from neighborPlateIndexes
+      // Reverse assign biomeIndex to plates
+      Biome biome = new Biome();
+      biome.plates = new List<Plate>();
+      biome.index = biomeCount;
+      biomeCount++;
+
+      foreach (int i in neighborPlateIndexes)
+      {
+        biome.plates.Add(plates[i]);
+        plates[i].biomeIndex = biome.index;
+      }
+
+      output.Add(biome);
+    }
+
+    return output;
+  }
+
+  void RandomBiomeAttunement()
+  {
+    TileType t;
+    TileType[] tta = new TileType[12] {
+				TileType.Dark,
+				TileType.Light,
+				TileType.Water,
+				TileType.Air,
+				TileType.Earth,
+				TileType.Fire,
+                TileType.Arbor,
+                TileType.Astral,
+                TileType.Crystal,
+                TileType.Ice,
+                TileType.Metal,
+                TileType.Vapor      };
+
+    foreach(Biome b in biomes)
+    {
+      t = tta[Random.Range(0,12)];
+      foreach(Plate p in b.plates){
+        foreach (SphereTile st in p.tiles){
+          st.type = t;
+        }
+      }
+    }
+  }
+
   void RandomPlateAttunement()
   {
     TileType t;
@@ -76,6 +162,7 @@ public class PolySphere
                 TileType.Ice,
                 TileType.Metal,
                 TileType.Vapor      };
+
     foreach(Plate p in plates)
     {
       t = tta[Random.Range(0,12)];
@@ -350,10 +437,10 @@ public class PolySphere
   {
 	  foreach (Plate p in plates)
 	  {
-      //Debug.Log(" plate " + p.index);
+      Debug.Log(" plate " + p.index);
       foreach (SphereTile st in p.boundary)
       {
-        //Debug.Log("plate " + p.index + "tile" + st.plate);
+        Debug.Log("plate " + p.index + "tile" + st.plate);
         st.distanceFromBoundary = 0;
         foreach (SphereTile stn in st.neighborList)
         {
@@ -515,6 +602,7 @@ public class PolySphere
 
   void BuildPlates()
   {
+  Debug.Log ("building plates");
     plates = new List<Plate>();
     SphereTile toOrigin = new SphereTile();
     //first get toPlate and toOrigin then make the plates
@@ -562,6 +650,12 @@ public class PolySphere
           }
         }
       }
+      // Clean up the neighborList for each tile in Boundary (we don't care about other tiles)
+      //  This has to be done because SpherTile.neighbors isn't getting populated correctly
+      foreach (SphereTile ill in toBoundary){
+        // Actually don't, we'll just use neighborDict.Values.ToList()
+      }
+
       //set boundary
       p.boundary = toBoundary;
       //toBoundary.Clear(); 

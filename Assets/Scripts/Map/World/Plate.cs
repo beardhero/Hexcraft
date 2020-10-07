@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public class Plate {
   public int index;
+  public int biomeIndex = -1;
   public bool oceanic;
   public bool subducted;
   public List<SphereTile> tiles;
@@ -20,7 +21,7 @@ public class Plate {
     index = ind;
     origin = ori;
     float driftx, drifty, driftz; //drift axis components(randomized)
-    tiles = new List<SphereTile>(t);
+    tiles = t; //new List<SphereTile>(t);
     //Random spin and drift
     //Define random axis and rotation about (drift)
     driftx = Random.Range(-1, 1);

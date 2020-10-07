@@ -35,7 +35,6 @@ public class WorldRenderer : MonoBehaviour
     
 
     //Create a mesh for each plate and put it in the list of outputs
-    Debug.Log("world.numberofPlates: " + world.numberOfPlates +"(is that too  many?)");
     for (int i = 0; i < world.numberOfPlates; i++)
     {
       output.Add(HexPlate(world, tileSet, i));
