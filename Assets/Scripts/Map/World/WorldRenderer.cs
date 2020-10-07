@@ -63,8 +63,8 @@ public class WorldRenderer : MonoBehaviour
             float texHeight = 8192f;// 7568f;//tileSet.texture.height;
             float texWidth = 8192f;//tileSet.texture.width;
                              //float root3 = Mathf.Sqrt(3);
-            uvTileWidth = 1.0f / 16f;// 42.0f; //tileSet.tileWidth / texWidth;
-            uvTileHeight = 1.0f / 16f;// 42.0f; //tileSet.tileHeight / texHeight;
+            uvTileWidth = 1.0f / 21f;// 42.0f; //tileSet.tileWidth / texWidth;
+            uvTileHeight = 1.0f / 21f;// 42.0f; //tileSet.tileHeight / texHeight;
 
             /*                       //float side = uvTileWidth / 2.0f;
             uv0 = new Vector2(uvTileWidth / 2.0f, uvTileHeight / 2.0f);
