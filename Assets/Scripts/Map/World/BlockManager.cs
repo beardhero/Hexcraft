@@ -115,7 +115,7 @@ public class BlockManager : NetworkBehaviour
             }
             for (int i = 0; i < top; i++)
             {
-                HexBlock blok = CreateBlock(ht.index, ht.type, i, true, i >= top-1);
+                HexBlock blok = CreateBlock(ht.index, ht.type, i, false, i >= top-1);
 
                 // Or set by height
                 // if (i==0)
@@ -237,7 +237,6 @@ public class BlockManager : NetworkBehaviour
 
     [Command(ignoreAuthority = true)]
     public void CmdRayRemoveBlock(Vector3 rayPos, Vector3 rayFor) {
-        Debug.Log("removing");
         Ray ray = new Ray(rayPos, rayFor);
         RaycastHit hit = new RaycastHit();
         if (Physics.Raycast(ray, out hit, rayrange))
@@ -255,7 +254,7 @@ public class BlockManager : NetworkBehaviour
             }
             if (plateInd == -1)
             {
-                Debug.Log("error finding plate index");
+                Debug.LogError("error finding plate index");
             }
             //Find block we hit
             int tri = hit.triangleIndex;// % 24;
@@ -271,7 +270,7 @@ public class BlockManager : NetworkBehaviour
                 }
             }
             else {
-                Debug.Log("block info null " + plateInd + "  " + blockInPlate);
+                Debug.LogError("block info null " + plateInd + "  " + blockInPlate);
             }
         }
     }
@@ -1157,7 +1156,7 @@ public class BlockManager : NetworkBehaviour
             MeshCollider mc = plate.GetComponent<MeshCollider>();
             Mesh m = mf.sharedMesh;
 
-            Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
+            //Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
             BlockInfo info = plate.GetComponent<BlockInfo>();
             int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
 
@@ -1251,7 +1250,7 @@ public class BlockManager : NetworkBehaviour
         MeshCollider mc = plate.GetComponent<MeshCollider>();
         Mesh m = mf.sharedMesh;
 
-        Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
+        //Debug.Log("rpc remove from plate " + plateInd + "  " + blockInWorld);
         BlockInfo info = plate.GetComponent<BlockInfo>();
         int blockInPlate = info.blockIndexes.IndexOf(blockInWorld);
 
