@@ -673,7 +673,6 @@ namespace Mirror
             if (NetworkServer.active)
             {
                 StopServer();
-                print("OnApplicationQuit: stopped server");
             }
         }
 

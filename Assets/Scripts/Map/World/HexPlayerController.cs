@@ -30,7 +30,7 @@ public class HexPlayerController : NetworkBehaviour {
 	public bool canJump;
 	public bool jumped;
 	public int numberOfJumps;
-	public int maxJumps = 2;
+	public int maxJumps = 20;
 	public Camera cam;
 	public float zoomMax = 6f;
 	public float zoomMin = 0f;

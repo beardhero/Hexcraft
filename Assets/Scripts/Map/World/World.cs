@@ -471,7 +471,6 @@ public List<int> GetTilesInRadius(float radius, int origin)
   {
     if (tiles == null || tiles.Count == 0)
     {
-      Debug.Log("creating new world cache. Scale:" + scale + " Subs: " + subdivisions);
       neighborInit = false;
       PolySphere sphere = new PolySphere(Vector3.zero, scale, subdivisions);
       //make the tileToPlate dict
@@ -490,7 +489,6 @@ public List<int> GetTilesInRadius(float radius, int origin)
   public void CacheHexes(PolySphere s)  // Executed by the cacher.  @CHANGE: Now directly converting spheretiles to hextiles
   { 
     tiles = new List<HexTile>(s.hexTiles);
-    Debug.Log(tiles[0].hexagon.scale);
     neighborInit = false;
   }
 

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Mirror;
+using UnityEngine.Profiling;
 
 public class BlockManager : NetworkBehaviour
 {
@@ -17,12 +18,13 @@ public class BlockManager : NetworkBehaviour
     public static int cloudHeight = 200;
     public static float cloudDensity = .24f;
     public static float rayrange;
+    static float hexScale = 99;
 
     public WorldManager worldManager;
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 256;
+    public static int maxHeight = 128;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
@@ -32,6 +34,105 @@ public class BlockManager : NetworkBehaviour
     public static float blockQuarterFactor = .025f;
     //private static float _blockScaleFactor = 0.1f;
     //public static float BlockScaleFactor { get => _blockScaleFactor / WorldManager.worldSubdivisions; set => _blockScaleFactor = value; }
+    
+    public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
+    {
+        return blocks[blocksOnTile[tile][blockHeight]];
+    }
+    public void Biomes()
+    {
+        //set the initial biomes
+        for (int i = 0; i < blocksOnTile.Count; i++)
+        {
+            int l = blocksOnTile[i].Length;
+            for (int b = 0; b < l; b++)
+            {
+                if (b == l - 1)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Earth);
+                }
+
+                if (b <= l - 2 && b >= l - 6)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Arbor);
+                }
+
+                if (b < l - 6)
+                {
+                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Metal);
+                }
+            }
+        }
+    }
+    public void Populate(string seed)
+    {
+        // -- 1. Elevation map
+        // -- 2. Heat Map
+        // -- 3. Moisture map
+        // -- 4. Rivers
+        // -- 5. Biomes
+        // -- 6. Caves
+        // -- 7. Place Blocks
+
+        heightmap = GenerateHeightmap(seed);
+        foreach (int h in heightmap)
+        {
+            avgHeight += h;
+        }
+        avgHeight /= heightmap.Length;
+        CreateBlocks();     // Assigns types currently using plate types
+    }
+    public int[] GenerateHeightmap(string seed)
+    {
+        int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
+
+        UnityEngine.Random.InitState(seed.GetHashCode());
+        Perlin perlin = PerlinType.DefaultSurface(seed);
+        float amplitude = maxHeight / 12;
+
+        for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
+        {
+            HexTile ht = WorldManager.activeWorld.tiles[i];
+            //Get next height
+            // Note static float hexScale = 99;
+            double perlinVal = perlin.GetValue(ht.hexagon.center.x * hexScale, ht.hexagon.center.y * hexScale, ht.hexagon.center.z * hexScale);
+            double v1 = perlinVal * amplitude;//*i; 
+            int h = (int)v1;
+            hmap[i] = h + (int)(maxHeight/2f);      // Note that we pad the values to prevent negative heights
+        }
+
+        return hmap;
+    }
+
+    void CreateBlocks(){
+        foreach (HexTile ht in WorldManager.activeWorld.tiles)
+        {            
+            // Iterate from 0 (bedrock) up to heightmap[ht.index] (top layer)
+            int top = BlockManager.heightmap[ht.index];
+            if (top<0){
+                Debug.LogError("heightmap got negative value: "+top);
+                top = 1;
+            }
+            for (int i = 0; i < top; i++)
+            {
+                HexBlock blok = CreateBlock(ht.index, ht.type, i, true, i >= top-1);
+
+                // Or set by height
+                // if (i==0)
+                //     blok.type = TileType.Gray;
+                // else if (i==top)
+                //     blok.type = TileType.Arbor;
+                // else if (top-6 > i && i < top)
+                //     blok.type = TileType.Earth;
+                // else
+                //     blok.type = TileType.Metal;
+
+                blocks.Add(blok);
+            }
+        }
+    }
+
+    
     //@TODO: client should do the raytracing and pass in blockIndex
     [Command(ignoreAuthority = true)]
     public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor, TileType toplace) {
@@ -1233,170 +1334,6 @@ public class BlockManager : NetworkBehaviour
         //m.triangles = triangles.ToArray();
         mf.sharedMesh = m;
         mc.sharedMesh = m;
-    }
-
-    public HexBlock GetBlockByTileAndHeight(int tile, int blockHeight) //unnecessary
-    {
-        return blocks[blocksOnTile[tile][blockHeight]];
-    }
-    public void Biomes()
-    {
-        //set the initial biomes
-        for (int i = 0; i < blocksOnTile.Count; i++)
-        {
-            int l = blocksOnTile[i].Length;
-            for (int b = 0; b < l; b++)
-            {
-                if (b == l - 1)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Earth);
-                }
-
-                if (b <= l - 2 && b >= l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Arbor);
-                }
-
-                if (b < l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Metal);
-                }
-            }
-        }
-    }
-    public void Populate(string seed)
-    {
-        Debug.Log("GETTING INTO POPULATE");
-        //set the surface heights
-        heightmap = GenerateHeightmap(SeedHandler.StringToBytes(seed));
-        foreach (int h in heightmap)
-        {
-            avgHeight += h;
-        }
-        avgHeight /= heightmap.Length;
-        //int[] noBlock = new int[blocks.Count];
-        PlaceBlocksIfNotInCave(SeedHandler.StringToBytes(seed));
-        //RefineWorld(SeedHandler.StringToBytes(seed));
-    }
-    public int[] GenerateHeightmap(byte[] seed)
-    {
-        Debug.Log("seed length" + seed.Length);
-        int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
-
-        Perlin perlin = new Perlin();
-        float sc = 99;
-        float f = 0.0000012f;
-        float l = 2.4f;
-        float p = .2f;
-        int o = 6;
-        float amplitude = 512f;
-        //float glyphProb = 64;
-        for (int i = 0; i < seed.Length; i++)
-        {
-            UnityEngine.Random.InitState(seed[i]);
-            perlin.Seed = seed[i];
-            //initialize 
-            if (i == 0)
-            {
-                for (int h = 0; h < hmap.Length; h++)
-                {
-                    hmap[h] = 64;
-                }
-            }
-            PerlinHeightmapAdjust(hmap, perlin, f, l, p, amplitude, o, sc);
-        }
-
-        return hmap;
-    }
-    public void PerlinHeightmapAdjust(int[] hmap, Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
-    {
-        perlin.Frequency = frequency;
-        perlin.Lacunarity = lacunarity;
-        perlin.Persistence = persistence;
-        perlin.OctaveCount = octaves;
-        for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
-        {
-            HexTile ht = WorldManager.activeWorld.tiles[i];
-            //Get next height
-            double perlinVal = perlin.GetValue(ht.hexagon.center.x * scale, ht.hexagon.center.y * scale, ht.hexagon.center.z * scale);
-            double v1 = perlinVal * amplitude;//*i; 
-            int h = (int)v1;
-            hmap[i] += h;
-            hmap[i] %= 256;
-        }
-    }
-
-    public void PlaceBlocksIfNotInCave(byte[] seed)
-    {
-        Perlin perlin = new Perlin();
-        float sc = 99f;
-        float f = .0000002f;
-        float l = 2.4f;
-        float p = .24f;
-        int o = 6;
-        float amplitude = 512f;
-
-        int perl = BitConverter.ToInt32(seed, 0);
-        perlin.Seed = perl;
-        PerlinCaves(perlin, f, l, p, amplitude, o, sc);
-    }
-
-    public void PerlinCaves(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
-    {
-        perlin.Frequency = frequency;
-        perlin.Lacunarity = lacunarity;
-        perlin.Persistence = persistence;
-        perlin.OctaveCount = octaves;
-        double pAvg = 0;
-        int it = 0;
-        foreach (HexTile ht in WorldManager.activeWorld.tiles)
-        {
-            bool bedrock;
-            bool quarterBlock = false;
-            for (int i = 0; i < maxHeight; i++)
-            {
-                if (i == 0)
-                {
-                    bedrock = true;
-                }
-                else
-                {
-                    bedrock = false;
-                }
-                int h = heightmap[ht.index];
-                if (i <= h)
-                {
-                    TileType t = TileType.Metal;
-                    //inital biomes
-                    if (i == h)
-                    {
-                        t = TileType.Earth;
-                        quarterBlock = true;
-                    }
-                    if (i < h && i >= h - 6)
-                    {
-                        t = TileType.Arbor;
-                    }
-                    HexBlock hb = CreateBlock(ht.index, t, i, bedrock, quarterBlock);
-                    double perlinVal = perlin.GetValue(hb.topCenter.x * scale, hb.topCenter.y * scale, hb.topCenter.z * scale);// * amplitude;
-                    
-                    pAvg += perlinVal;
-                    it++;
-                    //Debug.Log(perlinVal);
-                    if (perlinVal > 0 || hb.type != TileType.Metal || hb.unbreakable)
-                    {
-                        blocks.Add(hb);
-                        blocksOnTile[ht.index][i] = blocks.Count - 1;
-                    }
-                }
-            }
-        }
-        Debug.Log(pAvg / it);
-    }
-
-    public double GetPerlinForBlock(Perlin perlin, float frequency, float lacunarity, float persistence, float amplitude, int octaves, float scale)
-    {
-        return 1;
     }
 }
 

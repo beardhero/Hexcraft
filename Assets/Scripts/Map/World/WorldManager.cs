@@ -204,8 +204,6 @@ public class WorldManager : MonoBehaviour
       //g.GetComponent<MeshCollider>().enabled = false;
     }
     
-    Debug.Log(activeWorld.tiles.Count);
-
     if(combatManager != null)
     {
       CombatManager cm = combatManager.GetComponent<CombatManager>();
@@ -217,9 +215,8 @@ public class WorldManager : MonoBehaviour
     BlockManager.blockQuarterFactor /= worldSubdivisions;
     //place bedrock layer of blocks
     //generate heightmap from seed
-    string s = "seedtestspeedtest";
-    Debug.Log("ARE WE GETTING FUCKING HERE MATE?");
-    bM.Populate(s);
+    PerlinType.globalSeed = "seedtestspeedtest";
+    bM.Populate(PerlinType.globalSeed);
     bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
     //bM.Biomes();
     //start clouds
