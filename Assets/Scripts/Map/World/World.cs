@@ -94,40 +94,80 @@ public class World
   
       public void Populate(string seed)
     {
-        // -- 1. Elevation map
-        // -- 2. Heat Map
-        // -- 3. Moisture map
-        // -- 4. Rivers
-        // -- 5. Biomes
-        // -- 6. Caves
-        // -- 7. Place Blocks
+      // Base heighmap
+      float[] heights = GenerateHeightmap(PerlinType.DefaultSurface());
+      heightmap = new int[heights.Length];
+      // Convert from decimal-based to byte-based height
+      float amplitude = BlockManager.maxHeight / 4;
+      for (int h=0; h<heights.Length; h++)
+      {
+        double v1 = heights[h] * amplitude;
+        heightmap[h] = (int)(v1 + (BlockManager.maxHeight/2f));      // Note that we pad the values to prevent negative heights
+      }
 
-        heightmap = GenerateHeightmap(seed);
-        float avgHeight = 0;
-        foreach (int h in heightmap)
-            avgHeight += h;
-        avgHeight /= heightmap.Length;
+      float avgHeight = 0;
+      foreach (int h in heightmap)
+          avgHeight += h;
+      avgHeight /= heightmap.Length;
 
+      // Impassable tiles map
+      float[] impassMap = GenerateHeightmap(PerlinType.DefaultImpassable());
+      float impassThreshold = .5f;
+      for (int i=0; i<impassMap.Length; i++)
+      {
+      //Debug.Log(impassMap[i]);
+        // Set HexTile.passable based on the threshold, and weight those heights in heightmap
+        if (impassMap[i] < impassThreshold)
+        {
+          tiles[i].passable = false;
+          
+          //heightmap[i] = (int)(heightmap[i] * impassMap[i] * 4);
+        }
+      }
 
+      // Biomes map
+      float[] bioMap = GenerateHeightmap(PerlinType.DefaultSurface());
+
+      // Set Tile Types
+      for (int t=0; t<heightmap.Length; t++)
+      {
+        if (!tiles[t].passable) {tiles[t].type = TileType.Impassable; continue;}
+        if (bioMap[t] > .8) {tiles[t].type = TileType.Light; continue;}
+        if (bioMap[t] > .6) {tiles[t].type = TileType.Air; continue;}
+        if (bioMap[t] > .5) {tiles[t].type = TileType.Fire; continue;}
+        if (bioMap[t] > .4) {tiles[t].type = TileType.Earth; continue;}
+        if (bioMap[t] > .2) {tiles[t].type = TileType.Water; continue;}
+        // else
+        if (bioMap[t] > 0) {tiles[t].type = TileType.Dark; continue;}
+      }
     }
-    public int[] GenerateHeightmap(string seed)
-    {
-        int[] hmap = new int[tiles.Count];
 
-        UnityEngine.Random.InitState(seed.GetHashCode());
-        Perlin perlin = PerlinType.DefaultSurface(seed);
-        float amplitude = BlockManager.maxHeight / 12;
+    // In general, this returns values in the range of [0,1] (needs testing)
+    public float[] GenerateHeightmap(Perlin perlin)
+    {
+        float[] hmap = new float[tiles.Count];
+
+        UnityEngine.Random.InitState(PerlinType.globalSeed.GetHashCode());
 
         for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
         {
             HexTile ht = WorldManager.activeWorld.tiles[i];
             //Get next height
             // Note static float hexScale = 99;
-            double perlinVal = perlin.GetValue(ht.hexagon.center.x * BlockManager.hexScale, ht.hexagon.center.y * BlockManager.hexScale, ht.hexagon.center.z * BlockManager.hexScale);
-            double v1 = perlinVal * amplitude;//*i; 
-            int h = (int)v1;
-            hmap[i] = h + (int)(BlockManager.maxHeight/2f);      // Note that we pad the values to prevent negative heights
+            // Becase perlin seems to return values in the [-5,5] range, we add 5 and divide by 5
+            //  (edit: after some experimentation (4+perlin)/9 seems to return the best result, meaning close to [0,1] range)
+            hmap[i] = (4+(float)perlin.GetValue(ht.hexagon.center.x * BlockManager.hexScale, ht.hexagon.center.y * BlockManager.hexScale, ht.hexagon.center.z * BlockManager.hexScale))/9;
         }
+
+        // Testing
+        float min = 999, max = -999;
+        for (int x=0; x<hmap.Length; x++){
+          if (hmap[x] > max)
+            max = hmap[x];
+          if (hmap[x] < min)
+            min = hmap[x];
+        }
+        Debug.Log("Perlin generated a range of ["+min+","+max+"]");
 
         return hmap;
     }

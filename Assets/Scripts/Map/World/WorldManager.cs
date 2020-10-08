@@ -9,6 +9,7 @@ public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back fr
 public class WorldManager : MonoBehaviour
 {
   // === Public ===
+  public GameObject oceanPrefab;
   //public GameObject player;
   public string worldCaptureName;
   public RenderTexture activeTex;
@@ -205,12 +206,6 @@ public class WorldManager : MonoBehaviour
       //g.GetComponent<MeshRenderer>().enabled = false;
       //g.GetComponent<MeshCollider>().enabled = false;
     }
-    
-    if(combatManager != null)
-    {
-      CombatManager cm = combatManager.GetComponent<CombatManager>();
-      cm.Initialize(activeWorld);
-    }
 
     // Run BlockManager
     BlockManager bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
@@ -221,6 +216,15 @@ public class WorldManager : MonoBehaviour
     // Seed is assigned to PerlinType.globalSeed by GameManager.gameSeed
     bM.CreateBlocks();
     bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
+
+    // Place ocean (if light world)
+    //GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+
+    if(combatManager != null)
+    {
+      CombatManager cm = combatManager.GetComponent<CombatManager>();
+      cm.Initialize(activeWorld);
+    }
   }
 
   void Update()

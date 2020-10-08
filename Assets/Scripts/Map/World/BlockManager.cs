@@ -24,7 +24,7 @@ public class BlockManager : NetworkBehaviour
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 128;
+    public static int maxHeight = 32;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;

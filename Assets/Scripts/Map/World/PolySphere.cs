@@ -594,7 +594,6 @@ public class PolySphere
 
   void BuildPlates()
   {
-  Debug.Log ("building plates");
     plates = new List<Plate>();
     SphereTile toOrigin = new SphereTile();
     //first get toPlate and toOrigin then make the plates
