@@ -133,11 +133,11 @@ public class World
       {
         Debug.Log(bioMap[t]);
         if (!tiles[t].passable) {tiles[t].type = TileType.Gray; }    // Need to switch to Impassable type after setting up tilemap
-        else if (bioMap[t] > 1.6f) {tiles[t].type = TileType.Earth; } // Light
-        else if (bioMap[t] > 1.4f) {tiles[t].type = TileType.Earth; } // Air
-        else if (bioMap[t] > .9f) {tiles[t].type = TileType.Earth; }  // Fire
-        else if (bioMap[t] > .5f) {tiles[t].type = TileType.Earth; }  // Earth
-        else if (bioMap[t] > .3f) {tiles[t].type = TileType.Water; }  // Water
+        else if (bioMap[t] > .4f) {tiles[t].type = TileType.Light; } // Light
+        else if (bioMap[t] > .35f) {tiles[t].type = TileType.Air; } // Air
+        else if (bioMap[t] > .27f) {tiles[t].type = TileType.Fire; }  // Fire
+        else if (bioMap[t] > .2f) {tiles[t].type = TileType.Earth; }  // Earth
+        else if (bioMap[t] > .1f) {tiles[t].type = TileType.Water; }  // Water
         else  {tiles[t].type = TileType.Dark; } // Dark
       }
     }
