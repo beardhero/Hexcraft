@@ -12,7 +12,7 @@ public class GameManager : NetworkBehaviour
 {
   // === Const & Inspector Cache ===
   public RelativityState beginningState = RelativityState.WorldMap;
-  public const string gameSeed = "doesthisneedtobemorethaneightchars";
+  public string gameSeed = "doesthisneedtobemorethaneightchars";
 
   // === Static Cache ===
   static RelativityState state;
@@ -79,10 +79,10 @@ public class GameManager : NetworkBehaviour
           case RelativityState.Caching:
            // Debug.Log("got to game manager caching");
             loading = false;
+            PerlinType.globalSeed = gameSeed;
             InitializeWorld(loading);
-            //Debug.Log("advanced past initialize");
-            worldCacher = worldManagerObj.GetComponent<CreateWorldCache>();
-            worldCacher.BuildCache(WorldManager.activeWorld);
+            // When loading is false, world.initialize will .Generate and .Populate
+            CreateWorldCache.BuildCache(WorldManager.activeWorld);
           break;
 
           default:
@@ -95,7 +95,9 @@ public class GameManager : NetworkBehaviour
   {
     worldManagerObj = GameObject.FindWithTag("World Manager");
     worldManager = worldManagerObj.GetComponent<WorldManager>();
-    currentWorld = worldManager.Initialize(blockPrefab, loading);
+    worldManager.Initialize(blockPrefab, loading);
+
+    // Note that blockManager is initialized in WorldManager.Initialize
   }
 
   void InitializeCombat()

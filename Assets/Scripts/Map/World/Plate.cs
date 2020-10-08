@@ -36,6 +36,7 @@ public class Plate {
     //set spin
     spin = origin.center * spinAngle;
 
+    // Old system?
     float rand = Random.Range(0,1.0f);
     if(rand < 0.5f)
     {oceanic = true;}

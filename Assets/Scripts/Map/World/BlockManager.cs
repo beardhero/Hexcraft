@@ -18,7 +18,7 @@ public class BlockManager : NetworkBehaviour
     public static int cloudHeight = 200;
     public static float cloudDensity = .24f;
     public static float rayrange;
-    static float hexScale = 99;
+    public static float hexScale = 99;
 
     public WorldManager worldManager;
     //public Transform playerTrans;
@@ -39,76 +39,13 @@ public class BlockManager : NetworkBehaviour
     {
         return blocks[blocksOnTile[tile][blockHeight]];
     }
-    public void Biomes()
-    {
-        //set the initial biomes
-        for (int i = 0; i < blocksOnTile.Count; i++)
-        {
-            int l = blocksOnTile[i].Length;
-            for (int b = 0; b < l; b++)
-            {
-                if (b == l - 1)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Earth);
-                }
 
-                if (b <= l - 2 && b >= l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Arbor);
-                }
 
-                if (b < l - 6)
-                {
-                    blocks[blocksOnTile[i][b]].ChangeType(TileType.Metal);
-                }
-            }
-        }
-    }
-    public void Populate(string seed)
-    {
-        // -- 1. Elevation map
-        // -- 2. Heat Map
-        // -- 3. Moisture map
-        // -- 4. Rivers
-        // -- 5. Biomes
-        // -- 6. Caves
-        // -- 7. Place Blocks
-
-        heightmap = GenerateHeightmap(seed);
-        foreach (int h in heightmap)
-        {
-            avgHeight += h;
-        }
-        avgHeight /= heightmap.Length;
-        CreateBlocks();     // Assigns types currently using plate types
-    }
-    public int[] GenerateHeightmap(string seed)
-    {
-        int[] hmap = new int[WorldManager.activeWorld.tiles.Count];
-
-        UnityEngine.Random.InitState(seed.GetHashCode());
-        Perlin perlin = PerlinType.DefaultSurface(seed);
-        float amplitude = maxHeight / 12;
-
-        for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
-        {
-            HexTile ht = WorldManager.activeWorld.tiles[i];
-            //Get next height
-            // Note static float hexScale = 99;
-            double perlinVal = perlin.GetValue(ht.hexagon.center.x * hexScale, ht.hexagon.center.y * hexScale, ht.hexagon.center.z * hexScale);
-            double v1 = perlinVal * amplitude;//*i; 
-            int h = (int)v1;
-            hmap[i] = h + (int)(maxHeight/2f);      // Note that we pad the values to prevent negative heights
-        }
-
-        return hmap;
-    }
-
-    void CreateBlocks(){
+    public void CreateBlocks(){
         foreach (HexTile ht in WorldManager.activeWorld.tiles)
         {            
             // Iterate from 0 (bedrock) up to heightmap[ht.index] (top layer)
-            int top = BlockManager.heightmap[ht.index];
+            int top = WorldManager.activeWorld.heightmap[ht.index];
             if (top<0){
                 Debug.LogError("heightmap got negative value: "+top);
                 top = 1;
@@ -332,14 +269,14 @@ public class BlockManager : NetworkBehaviour
         //Create a mesh for each plate and put it in the list of outputs
         for (int i = 0; i < world.numberOfPlates; i++)
         {
-            output.Add(RenderBlockPlate(blocks, i, blockPrefab));
+            output.Add(RenderBlockPlate(i, blockPrefab));
         }
         plates = output;
 
         return output;
     }
 
-    public GameObject RenderBlockPlate(List<HexBlock> blocks, int p, GameObject blockPrefab)
+    public GameObject RenderBlockPlate(int p, GameObject blockPrefab)
     {
         GameObject output = Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
 

@@ -94,7 +94,7 @@ public class WorldManager : MonoBehaviour
 
   public BlockManager bM;
 
-  public World Initialize(GameObject blockPrefab, bool loadWorld = false)
+  public void Initialize(GameObject blockPrefab, bool loadWorld = false)
   {
     staticTileSet = regularTileSet;
     currentWorldObject = new GameObject("World");
@@ -187,10 +187,12 @@ public class WorldManager : MonoBehaviour
         }
       }
     }
-    else
+    else // not loadWorld, so generateworld
     {
       activeWorld = new World();
-      activeWorld.PrepForCache(worldScale, worldSubdivisions); //only being used for base planets right now
+      activeWorld.Generate(worldScale, worldSubdivisions);
+      activeWorld.Populate(PerlinType.globalSeed);
+      // Caching is then executed by GameManager
     }
     
     worldRenderer = GetComponent<WorldRenderer>();
@@ -209,20 +211,16 @@ public class WorldManager : MonoBehaviour
       CombatManager cm = combatManager.GetComponent<CombatManager>();
       cm.Initialize(activeWorld);
     }
-    //block tests
-    bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
+
+    // Run BlockManager
+    BlockManager bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
     BlockManager.blockScaleFactor /= worldSubdivisions;
     BlockManager.blockQuarterFactor /= worldSubdivisions;
     //place bedrock layer of blocks
     //generate heightmap from seed
-    PerlinType.globalSeed = "seedtestspeedtest";
-    bM.Populate(PerlinType.globalSeed);
+    // Seed is assigned to PerlinType.globalSeed by GameManager.gameSeed
+    bM.CreateBlocks();
     bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
-    //bM.Biomes();
-    //start clouds
-    //StartCoroutine(Clouds());
-
-    return activeWorld;
   }
 
   void Update()

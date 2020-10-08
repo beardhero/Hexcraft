@@ -31,6 +31,7 @@ public class World
   [HideInInspector] public float circumference, radius;
   [HideInInspector] public int numberOfPlates; //Set by polysphere on cache
   [HideInInspector] public float seaLevel = 0;
+
   [HideInInspector] public List<HexTile> tiles;
   [HideInInspector] public List<TriTile> triTiles;
   [HideInInspector] public List<HexTile> pentagons;
@@ -38,6 +39,9 @@ public class World
   //[HideInInspector] public List<Plate> plates;
   [HideInInspector] public Dictionary<int, int> tileToPlate; //key hextile.index, value plate index
   
+  [HideInInspector] public int[] heightmap;
+  [System.NonSerializedAttribute] PolySphere activeSphere;  // used for generating/caching
+
   private bool neighborInit;
   private List<List<HexTile>> _neighbors;
   public List<List<HexTile>> neighbors{
@@ -88,6 +92,48 @@ public class World
     origin = Vector3.zero;
   }
   
+      public void Populate(string seed)
+    {
+        // -- 1. Elevation map
+        // -- 2. Heat Map
+        // -- 3. Moisture map
+        // -- 4. Rivers
+        // -- 5. Biomes
+        // -- 6. Caves
+        // -- 7. Place Blocks
+
+        heightmap = GenerateHeightmap(seed);
+        float avgHeight = 0;
+        foreach (int h in heightmap)
+            avgHeight += h;
+        avgHeight /= heightmap.Length;
+
+
+    }
+    public int[] GenerateHeightmap(string seed)
+    {
+        int[] hmap = new int[tiles.Count];
+
+        UnityEngine.Random.InitState(seed.GetHashCode());
+        Perlin perlin = PerlinType.DefaultSurface(seed);
+        float amplitude = BlockManager.maxHeight / 12;
+
+        for (int i = 0; i < WorldManager.activeWorld.tiles.Count; i++)
+        {
+            HexTile ht = WorldManager.activeWorld.tiles[i];
+            //Get next height
+            // Note static float hexScale = 99;
+            double perlinVal = perlin.GetValue(ht.hexagon.center.x * BlockManager.hexScale, ht.hexagon.center.y * BlockManager.hexScale, ht.hexagon.center.z * BlockManager.hexScale);
+            double v1 = perlinVal * amplitude;//*i; 
+            int h = (int)v1;
+            hmap[i] = h + (int)(BlockManager.maxHeight/2f);      // Note that we pad the values to prevent negative heights
+        }
+
+        return hmap;
+    }
+
+  // old populate
+  /*
   public void Populate(byte[] seed)
   {
     Object[] airBiome = Resources.LoadAll("Air/");
@@ -213,12 +259,12 @@ public class World
       element = TileType.Vapor;
       //foreach(HexTile ht in tiles)
       //{
-        /* 
-        if(ht.type == TileType.Vapor || ht.type == TileType.Crystal)
-        {
-          ht.hexagon.scale = seaLevel;
-        }
-        */
+        
+        // if(ht.type == TileType.Vapor || ht.type == TileType.Crystal)
+        // {
+        //   ht.hexagon.scale = seaLevel;
+        // }
+        
       //}
       //DarkToLight();
     }
@@ -228,12 +274,12 @@ public class World
       element = TileType.Crystal;
       //foreach(HexTile ht in tiles)
       //{
-        /* 
-        if(ht.type == TileType.Vapor || ht.type == TileType.Crystal)
-        {
-          ht.hexagon.scale = seaLevel;
-        }
-        */
+
+        // if(ht.type == TileType.Vapor || ht.type == TileType.Crystal)
+        // {
+        //   ht.hexagon.scale = seaLevel;
+        // }
+
       //}
       //LightToDark();
     }
@@ -305,6 +351,7 @@ public class World
         }
     }
   }
+  */
   public void PerlinPopulate(Perlin perlin, double frequency, double lacunarity, double persistence, int octave, float amplitude, float scale, float stepHeight)
   {
     //Random.InitState(seed);
@@ -467,29 +514,20 @@ public List<int> GetTilesInRadius(float radius, int origin)
     return h;
   }
 
-  public void PrepForCache(float scale, int subdivisions)
+  public void Generate(float scale, int subdivisions)
   {
     if (tiles == null || tiles.Count == 0)
     {
       neighborInit = false;
-      PolySphere sphere = new PolySphere(Vector3.zero, scale, subdivisions);
+      activeSphere = new PolySphere(Vector3.zero, scale, subdivisions);
       //make the tileToPlate dict
-      numberOfPlates = sphere.numberOfPlates;
+      numberOfPlates = activeSphere.numberOfPlates;
       //tileToPlate = new Dictionary<int, int>();
-      CacheHexes(sphere);
-      //CacheTriangles(sphere);
+      // triTiles = activeSphere.triTiles;
+      tiles = activeSphere.hexTiles;
     }
     else
       Debug.Log("tiles not null during cache prep");
-  }
-  public void CacheTriangles(PolySphere s)
-  {
-    triTiles = new List<TriTile>(s.triTiles);
-  }
-  public void CacheHexes(PolySphere s)  // Executed by the cacher.  @CHANGE: Now directly converting spheretiles to hextiles
-  { 
-    tiles = new List<HexTile>(s.hexTiles);
-    neighborInit = false;
   }
 
   public void LightToDark()

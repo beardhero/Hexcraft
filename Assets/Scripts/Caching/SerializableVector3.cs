@@ -24,6 +24,10 @@
       return new Vector3(v.x, v.y, v.z);
     }
 
+    public Vector3 ToVector3(){
+      return new Vector3(this.x, this.y, this.z);
+    }
+
     public override string ToString()
     {
         return String.Format("[{0}, {1}, {2}]", x, y, z);

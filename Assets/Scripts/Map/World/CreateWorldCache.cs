@@ -7,9 +7,10 @@ public class CreateWorldCache : MonoBehaviour {
   public float scale;
   public int subdivisions;
 
-  public void BuildCache  (World world) 
+  public static void BuildCache  (World world) 
   {
-    world.PrepForCache(scale, subdivisions);
+    // This is already being done in WorldManager.Initialize(!loadWorld)
+    //world.PrepForCache(scale, subdivisions);
 
     try
     {

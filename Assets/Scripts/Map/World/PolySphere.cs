@@ -22,12 +22,12 @@ public class PolySphere
   public List<Triangle> finalTris;    // The finest level of subdivided tris
   public List<HexTile> hexTiles;
   //public List<HexTile> orbitTiles;
-  public List<TriTile> triTiles;
+  public List<TriTile> triTiles;  // This is unused currently
   public List<SphereTile> sTiles; //the tiles on this sphere
   public List<List<SphereTile>> tPlates;
   public List<Plate> plates;
   public int numberOfPlates;
-  public int maxTilesPerPlate = 64;
+  public int maxTilesPerPlate = 52;
   public float initialHeight;
   public float oceanProb = 0.6f; //redacted
   
@@ -43,25 +43,17 @@ public class PolySphere
     icosahedronTris = Icosahedron(scale);
  
     SubdivideAndDuals(); //Builds SphereTiles
-    
-    
-    //SimplexHeights();
-    //SimplexHeights();
-    //SimplexHeights();
-    //AvgHeight();
-    //CorrectSunkenTiles();
     TectonicPlates(); //Populates plates and creates stress forces between them.
+
+    // Tiles are now attuned in World.Populate()
     //RandomPlateAttunement();    // old way
+    //PerlinAttunement();
 	  
-    biomes = PlateBiomeGrouping(15);   // This groups n neighboring plates into mega-plates that we now call Biomes
-    Debug.Log("Grouped "+plates.Count+" plates into "+biomes.Count+" biomes.");
-    RandomBiomeAttunement();
-    //CacheTris();
     CacheHexes(); //Converts to HexTiles for serialization
+  }
+
+  void PerlinAttunement(){
     
-    //avgTileHeight = AvgHexHeight();
-  
-    //HeightSeed();
   }
  
   List<Biome> PlateBiomeGrouping(int neighborCount)

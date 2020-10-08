@@ -6,7 +6,7 @@ using LibNoise.Unity;
 using LibNoise.Unity.Generator;
 
 public static class PerlinType{
-    public static string globalSeed;
+    public static string globalSeed = "seedTestSpeedTest";
     public static Perlin DefaultSurface(string seed = "seed"){
         Perlin output = new Perlin();
         output.Frequency = 0.0001f;
