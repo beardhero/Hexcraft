@@ -266,9 +266,10 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 325444920}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.301554, y: 5.1824636, z: 0.9149575}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
+  m_Children:
+  - {fileID: 1498933181}
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -871,6 +872,15 @@ PrefabInstance:
       propertyPath: regularTileSet.typeUVs.Array.data[17].minCoord.y
       value: 15
       objectReference: {fileID: 0}
+    - target: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223, type: 3}
+      propertyPath: oceanPrefab
+      value: 
+      objectReference: {fileID: 4583465958040263120, guid: a084029ad2880384ea555d221c7044bf,
+        type: 3}
+    - target: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223, type: 3}
+      propertyPath: worldObjectsContainer
+      value: 
+      objectReference: {fileID: 325444921}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 106408e00a16546738c43c52d7a99223, type: 3}
 --- !u!1 &707756284
@@ -1130,7 +1140,7 @@ PrefabInstance:
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: water
       value: 
-      objectReference: {fileID: 100000, guid: bcae914220acd4907840a029bb9d9aec, type: 2}
+      objectReference: {fileID: 100000, guid: bcae914220acd4907840a029bb9d9aec, type: 3}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: beginningState
       value: 1
@@ -1221,6 +1231,36 @@ PrefabInstance:
     - {fileID: 11427960, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
     - {fileID: 11400216, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
+--- !u!1 &1498933180
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1498933181}
+  m_Layer: 0
+  m_Name: plate container
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1498933181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1498933180}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 325444921}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1539802628 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 11437394, guid: 106408e00a16546738c43c52d7a99223,

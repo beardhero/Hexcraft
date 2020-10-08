@@ -10,6 +10,7 @@ public class WorldManager : MonoBehaviour
 {
   // === Public ===
   public GameObject oceanPrefab;
+  public Transform worldObjectsContainer;
   //public GameObject player;
   public string worldCaptureName;
   public RenderTexture activeTex;
@@ -215,10 +216,20 @@ public class WorldManager : MonoBehaviour
     //generate heightmap from seed
     // Seed is assigned to PerlinType.globalSeed by GameManager.gameSeed
     bM.CreateBlocks();
-    bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
+    List<GameObject> plates = bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
+
+    // Group plates for organization
+    Transform plateContainer = worldObjectsContainer.Find("plate container");
+    foreach (GameObject o in plates)
+    {
+      o.transform.parent = plateContainer;
+    }
 
     // Place ocean (if light world)
-    //GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+    GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+    ocean.transform.parent = worldObjectsContainer;
+    float scale = activeWorld.avgHeight*2 + 120;
+    ocean.transform.localScale = new Vector3(scale, scale, scale);
 
     if(combatManager != null)
     {

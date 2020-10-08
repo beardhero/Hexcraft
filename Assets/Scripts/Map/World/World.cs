@@ -20,6 +20,8 @@ public class World
   public Season season;
   public AxisTilt tilt;
   public TileType element;
+
+  public float avgHeight;
   public float glyphProb = 0.006f; //distribution of glyphs
   public float populationProb = 0;//.42f;
   public int maxObjects = 2400;
@@ -92,7 +94,7 @@ public class World
     origin = Vector3.zero;
   }
   
-      public void Populate(string seed)
+    public void Populate(string seed)
     {
       // Base heighmap
       float[] heights = GenerateHeightmap(PerlinType.DefaultSurface());
@@ -105,20 +107,18 @@ public class World
         heightmap[h] = (int)(v1 + (BlockManager.maxHeight/2f));      // Note that we pad the values to prevent negative heights
       }
 
-      float avgHeight = 0;
+      avgHeight = 0;
       foreach (int h in heightmap)
           avgHeight += h;
       avgHeight /= heightmap.Length;
 
       // Impassable tiles map
-      float[] impassMap = GenerateHeightmap(PerlinType.DefaultImpassable());
-      float impassThreshold = .5f;
-      for (int i=0; i<impassMap.Length; i++)
+      for (int i=0; i<heightmap.Length; i++)
       {
-      //Debug.Log(impassMap[i]);
-        // Set HexTile.passable based on the threshold, and weight those heights in heightmap
-        if (impassMap[i] < impassThreshold)
+        if (heightmap[i] < avgHeight)
         {
+          //heightmap[i] = (int)avgHeight;
+          heightmap[i] = (int)((heightmap[i] + avgHeight*2)/3.0f) - 2;
           tiles[i].passable = false;
           
           //heightmap[i] = (int)(heightmap[i] * impassMap[i] * 4);
@@ -131,14 +131,14 @@ public class World
       // Set Tile Types
       for (int t=0; t<heightmap.Length; t++)
       {
-        if (!tiles[t].passable) {tiles[t].type = TileType.Impassable; continue;}
-        if (bioMap[t] > .8) {tiles[t].type = TileType.Light; continue;}
-        if (bioMap[t] > .6) {tiles[t].type = TileType.Air; continue;}
-        if (bioMap[t] > .5) {tiles[t].type = TileType.Fire; continue;}
-        if (bioMap[t] > .4) {tiles[t].type = TileType.Earth; continue;}
-        if (bioMap[t] > .2) {tiles[t].type = TileType.Water; continue;}
-        // else
-        if (bioMap[t] > 0) {tiles[t].type = TileType.Dark; continue;}
+        Debug.Log(bioMap[t]);
+        if (!tiles[t].passable) {tiles[t].type = TileType.Gray; }    // Need to switch to Impassable type after setting up tilemap
+        else if (bioMap[t] > 1.6f) {tiles[t].type = TileType.Earth; } // Light
+        else if (bioMap[t] > 1.4f) {tiles[t].type = TileType.Earth; } // Air
+        else if (bioMap[t] > .9f) {tiles[t].type = TileType.Earth; }  // Fire
+        else if (bioMap[t] > .5f) {tiles[t].type = TileType.Earth; }  // Earth
+        else if (bioMap[t] > .3f) {tiles[t].type = TileType.Water; }  // Water
+        else  {tiles[t].type = TileType.Dark; } // Dark
       }
     }
 

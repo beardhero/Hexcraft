@@ -56,13 +56,15 @@ ENDCG
 
 
 Subshader {
-	Tags { "RenderType"="Opaque" }
+	Tags { "RenderType"="Transparent" "Queue"="Transparent" }
+	Blend SrcAlpha OneMinusSrcAlpha
 	Pass {
 
 CGPROGRAM
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile_fog
+
 
 sampler2D _BumpMap;
 sampler2D _ColorControl;

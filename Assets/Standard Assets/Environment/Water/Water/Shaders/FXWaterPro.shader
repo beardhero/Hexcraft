@@ -19,9 +19,8 @@ Properties {
 // -----------------------------------------------------------
 // Fragment program cards
 
-
 Subshader {
-	Tags { "WaterMode"="Refractive" "RenderType"="Opaque" }
+	Tags { "WaterMode"="Refractive" "RenderType"="Transparent" "Queue"="Transparent" }
 	Pass {
 CGPROGRAM
 #pragma vertex vert
