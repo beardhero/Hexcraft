@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class HexTile
 {
   public int index;
+  public int biomeIndex;
   public int plate = -1;
   public int generation = 0;
   public float height = 1;

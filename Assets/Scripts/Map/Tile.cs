@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 [Serializable]
 public enum TileType {
-  None, Gray, Impassable,
+  None, Gray,
   Water, Fire, Earth, Air, Dark, Light,
   Metal, Ice, Vapor, Crystal, Arbor, Astral, 
   Luna, Sol, Void, Divine,

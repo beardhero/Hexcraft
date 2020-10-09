@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 public class Plate {
   public int index;
-  public int biomeIndex = -1;
   public bool oceanic;
   public bool subducted;
   public List<SphereTile> tiles;

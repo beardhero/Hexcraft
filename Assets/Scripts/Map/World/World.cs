@@ -22,19 +22,20 @@ public class World
   public TileType element;
 
   public float avgHeight;
+  public float oceanLevel;
   public float glyphProb = 0.006f; //distribution of glyphs
   public float populationProb = 0;//.42f;
   public int maxObjects = 2400;
   public static int zeroState = 3;
   public static int oneState = 4;
+    [HideInInspector] public List<Biome> biomes;
+  [HideInInspector] public List<HexTile> tiles;
   [HideInInspector] public SerializableVector3 origin;
   [HideInInspector] public int circumferenceInTiles;
   [HideInInspector] public int distanceBetweenTiles;
   [HideInInspector] public float circumference, radius;
   [HideInInspector] public int numberOfPlates; //Set by polysphere on cache
   [HideInInspector] public float seaLevel = 0;
-
-  [HideInInspector] public List<HexTile> tiles;
   [HideInInspector] public List<TriTile> triTiles;
   [HideInInspector] public List<HexTile> pentagons;
   [HideInInspector] public List<Rune> runes;
@@ -111,34 +112,105 @@ public class World
       foreach (int h in heightmap)
           avgHeight += h;
       avgHeight /= heightmap.Length;
+      oceanLevel = avgHeight; //+1;  // Note that +1 makes an island world and -1 makes a dry world
 
       // Impassable tiles map
       for (int i=0; i<heightmap.Length; i++)
       {
-        if (heightmap[i] < avgHeight)
+        if (heightmap[i] < oceanLevel)
         {
-          //heightmap[i] = (int)avgHeight;
-          heightmap[i] = (int)((heightmap[i] + avgHeight*2)/3.0f) - 2;
+          heightmap[i]--;   // Just to make it a little more visible
+          //heightmap[i] = (int)((heightmap[i] + oceanLevel*2)/3.0f) -2;
           tiles[i].passable = false;
-          
+          tiles[i].type = TileType.Void;    // @Todo: make base world type
           //heightmap[i] = (int)(heightmap[i] * impassMap[i] * 4);
         }
       }
 
-      // Biomes map
-      float[] bioMap = GenerateHeightmap(PerlinType.DefaultSurface());
+      // // Perlin Biomes
+      // float[] bioMap = GenerateHeightmap(PerlinType.DefaultBiome());
+      // // Set Tile Types
+      // for (int t=0; t<heightmap.Length; t++)
+      // {
+      //   if (!tiles[t].passable) {tiles[t].type = TileType.Water; }    // Need to switch to Divine type once set up
+      //   else if (bioMap[t] > .55f) {tiles[t].type = TileType.Light; } // Light
+      //   else if (bioMap[t] > .48f) {tiles[t].type = TileType.Air; } // Air
+      //   else if (bioMap[t] > .45f) {tiles[t].type = TileType.Fire; }  // Fire
+      //   else if (bioMap[t] > .39f) {tiles[t].type = TileType.Earth; }  // Earth
+      //   else if (bioMap[t] > .27f) {tiles[t].type = TileType.Water; }  // Water
+      //   else  {tiles[t].type = TileType.Dark; } // Dark
+      // }
 
-      // Set Tile Types
-      for (int t=0; t<heightmap.Length; t++)
+      // --- Flood Fill biomes ---
+      // Set all to Gray to start
+      for (int s=0; s<tiles.Count; s++)
       {
-        Debug.Log(bioMap[t]);
-        if (!tiles[t].passable) {tiles[t].type = TileType.Gray; }    // Need to switch to Impassable type after setting up tilemap
-        else if (bioMap[t] > .4f) {tiles[t].type = TileType.Light; } // Light
-        else if (bioMap[t] > .35f) {tiles[t].type = TileType.Air; } // Air
-        else if (bioMap[t] > .27f) {tiles[t].type = TileType.Fire; }  // Fire
-        else if (bioMap[t] > .2f) {tiles[t].type = TileType.Earth; }  // Earth
-        else if (bioMap[t] > .1f) {tiles[t].type = TileType.Water; }  // Water
-        else  {tiles[t].type = TileType.Dark; } // Dark
+        if (tiles[s].passable)// && Random.value < .5f)
+          tiles[s].type = TileType.Gray;  // Gray=toCheck
+      }
+
+      // Then set a starting biome on a tile and "fill" by checking each of it's neighbors.
+      //  If it's gray then add it's neighbors to a list of tiles to check again next round
+      TileType currentType = TileType.Water;
+      int maxBiomeSize = Random.Range(33,88);
+      int minBiomeSize = 33;
+      biomes = new List<Biome>();
+      Biome currentBiome = new Biome();
+      currentBiome.type = currentType;
+      currentBiome.index = 0;
+
+      for (int tileIndex=0; tileIndex<tiles.Count; tileIndex++)
+      {
+        if (tiles[tileIndex].type != TileType.Gray) continue;
+
+        tiles[tileIndex].type = currentType;
+        currentBiome.tileIndexes.Add(tiles[tileIndex].index);
+        tiles[tileIndex].biomeIndex = currentBiome.index;
+        int count = 1;    // Cause of the assignment above ^
+
+        RecursiveFill(tileIndex, currentType, ref count, maxBiomeSize, currentBiome, false);
+        if (count < minBiomeSize){
+          RecursiveFill(tileIndex, currentType, ref count, minBiomeSize, currentBiome, true);
+        }
+
+        // When recursiveFill finishes, we've reached the end of this contiguous mass
+        //  Start next biome
+        biomes.Add(currentBiome);
+        currentBiome = new Biome();
+        currentBiome.index = biomes.Count;
+        currentType++;
+        if (currentType > TileType.Light)
+          currentType = TileType.Water;  // If we've reached the end of the type list, start again from Water @TODO: create a list of types to use rather than using all
+
+        currentBiome.type = currentType;    // It's important to split this up so we don't increment current biome's type
+
+        maxBiomeSize = Random.Range(12,88); // Set this for the next run
+      }
+    }
+
+    void RecursiveFill(int index, TileType type, ref int count, int max, Biome currentBiome, bool overrideNeighbors)
+    {
+      // Check the six neighbors of index
+      for (int n=0; n<tiles[index].neighbors.Count; n++)
+      {
+        // If it's gray it's definitely passable. If we're overriding, double check
+        if (tiles[tiles[index].neighbors[n]].type == TileType.Gray || (tiles[tiles[index].neighbors[n]].passable && overrideNeighbors))
+        {
+          if (tiles[tiles[index].neighbors[n]].type != TileType.Gray && tiles[tiles[index].neighbors[n]].type != type) // We're overriding a neighbor (that's not our type) and need to take it out of an existing biome list
+          {
+            biomes[tiles[tiles[index].neighbors[n]].biomeIndex].tileIndexes.Remove(tiles[index].neighbors[n]);
+          }
+
+          count++;
+          tiles[tiles[index].neighbors[n]].type = type;
+          currentBiome.tileIndexes.Add(tiles[index].neighbors[n]);
+          tiles[tiles[index].neighbors[n]].biomeIndex = currentBiome.index;
+
+          if (count > max)
+            return;
+          else
+            RecursiveFill(tiles[index].neighbors[n], type, ref count, max, currentBiome, overrideNeighbors);
+        }
       }
     }
 
@@ -160,14 +232,14 @@ public class World
         }
 
         // Testing
-        float min = 999, max = -999;
-        for (int x=0; x<hmap.Length; x++){
-          if (hmap[x] > max)
-            max = hmap[x];
-          if (hmap[x] < min)
-            min = hmap[x];
-        }
-        Debug.Log("Perlin generated a range of ["+min+","+max+"]");
+        // float min = 999, max = -999;
+        // for (int x=0; x<hmap.Length; x++){
+        //   if (hmap[x] > max)
+        //     max = hmap[x];
+        //   if (hmap[x] < min)
+        //     min = hmap[x];
+        // }
+        // Debug.Log("Perlin generated a range of ["+min+","+max+"]");
 
         return hmap;
     }

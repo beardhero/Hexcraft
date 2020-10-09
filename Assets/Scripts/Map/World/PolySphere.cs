@@ -5,7 +5,6 @@ using System.Linq;
 
 public class PolySphere
 {
-  public List<Biome> biomes;
   public static Random rnd = new Random();
   //Initial icosahedron coords
   public static List<Vector3> icoCoords;
@@ -27,7 +26,7 @@ public class PolySphere
   public List<List<SphereTile>> tPlates;
   public List<Plate> plates;
   public int numberOfPlates;
-  public int maxTilesPerPlate = 52;
+  public int maxTilesPerPlate = 54;
   public float initialHeight;
   public float oceanProb = 0.6f; //redacted
   
@@ -56,87 +55,87 @@ public class PolySphere
     
   }
  
-  List<Biome> PlateBiomeGrouping(int neighborCount)
-  {
-    // Look through all the boundary tiles to see neighboring plates
-    // Make plate neighbors out of them by setting a biomeID
-    // After adding neighborCount plates to a biome, create another biome
+  // List<Biome> PlateBiomeGrouping(int neighborCount)
+  // {
+  //   // Look through all the boundary tiles to see neighboring plates
+  //   // Make plate neighbors out of them by setting a biomeID
+  //   // After adding neighborCount plates to a biome, create another biome
 
-    List<Biome> output = new List<Biome>();
-    int biomeCount = 0;
+  //   List<Biome> output = new List<Biome>();
+  //   int biomeCount = 0;
 
-    foreach (Plate plate in plates)
-    {
-      List<int> neighborPlateIndexes = new List<int>();
-      if (plate.biomeIndex == -1)  // This plate doesn't have a biome yet so we add it
-      {
-        neighborPlateIndexes.Add(plate.index);
-      }
-      // Now we continue to check its neighbors
+  //   foreach (Plate plate in plates)
+  //   {
+  //     List<int> neighborPlateIndexes = new List<int>();
+  //     if (plate.biomeIndex == -1)  // This plate doesn't have a biome yet so we add it
+  //     {
+  //       neighborPlateIndexes.Add(plate.index);
+  //     }
+  //     // Now we continue to check its neighbors
 
-      // Find a neighbor from this plate's boundary
-      foreach (SphereTile tile in plate.boundary){
-        foreach (SphereTile neighbTile in tile.neighborList.Distinct())
-        {
-          // Only add if the plate we're checking is not yet in a biome list
-          if (plates[neighbTile.plate].biomeIndex == -1 && !neighborPlateIndexes.Contains(neighbTile.plate))
-          {
-            Debug.Log("adding plate "+neighbTile.plate+" as a neighbor of plate "+plate.index);
-            neighborPlateIndexes.Add(neighbTile.plate);
-            if (neighborPlateIndexes.Count >= neighborCount)
-              break;
-          }
-        }
-        if (neighborPlateIndexes.Count >= neighborCount)
-          break;
-      }
+  //     // Find a neighbor from this plate's boundary
+  //     foreach (SphereTile tile in plate.boundary){
+  //       foreach (SphereTile neighbTile in tile.neighborList.Distinct())
+  //       {
+  //         // Only add if the plate we're checking is not yet in a biome list
+  //         if (plates[neighbTile.plate].biomeIndex == -1 && !neighborPlateIndexes.Contains(neighbTile.plate))
+  //         {
+  //           Debug.Log("adding plate "+neighbTile.plate+" as a neighbor of plate "+plate.index);
+  //           neighborPlateIndexes.Add(neighbTile.plate);
+  //           if (neighborPlateIndexes.Count >= neighborCount)
+  //             break;
+  //         }
+  //       }
+  //       if (neighborPlateIndexes.Count >= neighborCount)
+  //         break;
+  //     }
 
-      // Create a new Biome and assign everything from neighborPlateIndexes
-      // Reverse assign biomeIndex to plates
-      Biome biome = new Biome();
-      biome.plates = new List<Plate>();
-      biome.index = biomeCount;
-      biomeCount++;
+  //     // Create a new Biome and assign everything from neighborPlateIndexes
+  //     // Reverse assign biomeIndex to plates
+  //     Biome biome = new Biome();
+  //     biome.plates = new List<Plate>();
+  //     biome.index = biomeCount;
+  //     biomeCount++;
 
-      foreach (int i in neighborPlateIndexes)
-      {
-        biome.plates.Add(plates[i]);
-        plates[i].biomeIndex = biome.index;
-      }
+  //     foreach (int i in neighborPlateIndexes)
+  //     {
+  //       biome.plates.Add(plates[i]);
+  //       plates[i].biomeIndex = biome.index;
+  //     }
 
-      output.Add(biome);
-    }
+  //     output.Add(biome);
+  //   }
 
-    return output;
-  }
+  //   return output;
+  // }
 
-  void RandomBiomeAttunement()
-  {
-    TileType t;
-    TileType[] tta = new TileType[12] {
-				TileType.Dark,
-				TileType.Light,
-				TileType.Water,
-				TileType.Air,
-				TileType.Earth,
-				TileType.Fire,
-                TileType.Arbor,
-                TileType.Astral,
-                TileType.Crystal,
-                TileType.Ice,
-                TileType.Metal,
-                TileType.Vapor      };
+  // void RandomBiomeAttunement()
+  // {
+  //   TileType t;
+  //   TileType[] tta = new TileType[12] {
+	// 			TileType.Dark,
+	// 			TileType.Light,
+	// 			TileType.Water,
+	// 			TileType.Air,
+	// 			TileType.Earth,
+	// 			TileType.Fire,
+  //               TileType.Arbor,
+  //               TileType.Astral,
+  //               TileType.Crystal,
+  //               TileType.Ice,
+  //               TileType.Metal,
+  //               TileType.Vapor      };
 
-    foreach(Biome b in biomes)
-    {
-      t = tta[Random.Range(0,12)];
-      foreach(Plate p in b.plates){
-        foreach (SphereTile st in p.tiles){
-          st.type = t;
-        }
-      }
-    }
-  }
+  //   foreach(Biome b in biomes)
+  //   {
+  //     t = tta[Random.Range(0,12)];
+  //     foreach(Plate p in b.plates){
+  //       foreach (SphereTile st in p.tiles){
+  //         st.type = t;
+  //       }
+  //     }
+  //   }
+  // }
 
   void RandomPlateAttunement()
   {

@@ -70,7 +70,7 @@ public class HexPlayerController : NetworkBehaviour {
             animator.enabled = true;
             animator.Play("Idle");
             blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
-            trans.position = aW.tiles[spawnTile].hexagon.center * 10f;
+            trans.position = aW.tiles[1].hexagon.center * 10f;
             //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
             emh = elementMenuHighlight.GetComponent<RectTransform>();
             emh.anchoredPosition3D = firePos;
