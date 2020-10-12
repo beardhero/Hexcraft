@@ -2,36 +2,20 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public abstract class Commander
+// === Helper Classes ===
+public class PlayerStatus
 {
-  public int participantID;
-  public int nexusLoc;
-  public Army army;
-
-  public Commander(){}
-  public Commander(int id, Army a)
-  {
-    participantID = id;
-    army = a;
-  }
-
-  public void BeginCombat(int nl)
-  {
-    nexusLoc = nl;
-    DeployUnits();
-  }
-
-  public abstract void DeployUnits();
-  public abstract void OnWaitingForCommands();
-  public void SubmitCommands(Queue<Command> cmds)
-  {
-    GameManager.combatManager.ReceiveCommands(participantID, cmds);
-  }
+  //public Queue<Command> pendingCommands;
 }
 
-
-[System.Serializable]
-public class Army
+// === Commander ===
+public class Commander : MonoBehaviour
 {
-  public List<Unit> units;
+  public Transform trans;
+  public PlayerStatus status;
+  public Skirmish activeSkirmish;
+
+  private void Start() {
+    trans = transform;  //   Caching transforms is essential when they're being called every Update
+  }
 }

@@ -29,7 +29,7 @@ public abstract class RuneHex{
 	public abstract IEnumerator Cast(int origin);
     public void InstantiateAboveTile(int tile, float height, Vector3 scale)
     {
-        Vector3 tileVec = CombatManager.activeWorld.tiles[tile].hexagon.center;
+        Vector3 tileVec = WorldManager.activeWorld.tiles[tile].hexagon.center;
         Vector3 tileVecNorm = tileVec.normalized;
         Vector3 startPos = tileVec + tileVecNorm * height; //above the tile by 1 unit 
         Vector3 startingScale = scale;
@@ -193,7 +193,7 @@ public class WaterBurstI : LifeHex
     public override IEnumerator Cast(int origin)
     {
         castedTiles.Add(origin);
-        CombatManager.activeWorld.tiles[origin].generation = glyph;
+        WorldManager.activeWorld.tiles[origin].generation = glyph;
         IEnumerator livingHex = Live();
         yield return livingHex;
     }

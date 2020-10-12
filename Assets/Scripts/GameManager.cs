@@ -63,8 +63,7 @@ public class GameManager : NetworkBehaviour
             loading = true;
             InitializeWorld(loading);
 
-            //InitializeCombat();
-            //combatManager.BeginDuel();
+            InitializeCombat();
           break;
 
           case RelativityState.WorldMap:
@@ -100,12 +99,12 @@ public class GameManager : NetworkBehaviour
     // Note that blockManager is initialized in WorldManager.Initialize
   }
 
-  // void InitializeCombat()
-  // {
-  //   combatManagerObj = GameObject.FindWithTag("Combat Manager");
-  //   combatManager = combatManagerObj.GetComponent<CombatManager>();
-  //   combatManager.Initialize(currentWorld);
-  // }
+  void InitializeCombat()
+  {
+    combatManagerObj = GameObject.FindWithTag("Combat Manager");
+    combatManager = combatManagerObj.GetComponent<CombatManager>();
+    combatManager.Initialize(currentWorld);
+  }
 	
   void InitializeZone()
   {
