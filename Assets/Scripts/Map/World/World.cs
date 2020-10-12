@@ -112,7 +112,7 @@ public class World
       foreach (int h in heightmap)
           avgHeight += h;
       avgHeight /= heightmap.Length;
-      oceanLevel = avgHeight; //+1;  // Note that +1 makes an island world and -1 makes a dry world
+      oceanLevel = avgHeight-1; //+1;  // Note that +1 makes an island world and -1 makes a dry world
 
       // Impassable tiles map
       for (int i=0; i<heightmap.Length; i++)
@@ -152,8 +152,8 @@ public class World
       // Then set a starting biome on a tile and "fill" by checking each of it's neighbors.
       //  If it's gray then add it's neighbors to a list of tiles to check again next round
       TileType currentType = TileType.Water;
-      int maxBiomeSize = Random.Range(33,88);
-      int minBiomeSize = 33;
+      int maxBiomeSize = Random.Range(75,88);
+      int minBiomeSize = 75;
       biomes = new List<Biome>();
       Biome currentBiome = new Biome();
       currentBiome.type = currentType;

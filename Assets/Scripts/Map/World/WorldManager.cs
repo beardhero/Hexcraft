@@ -228,7 +228,7 @@ public class WorldManager : MonoBehaviour
     // Place ocean (if light world)
     GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
     ocean.transform.parent = worldObjectsContainer;
-    float scale = activeWorld.oceanLevel*3.6f;    // No clue where this scaling came from, just my brute force fit for 138 maxheight
+    float scale = activeWorld.oceanLevel*3.5f;    // No clue where this scaling came from, just my brute force fit for 138 maxheight
     ocean.transform.localScale = new Vector3(scale, scale, scale);
   }
 

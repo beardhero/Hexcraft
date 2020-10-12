@@ -1143,7 +1143,7 @@ PrefabInstance:
       objectReference: {fileID: 100000, guid: bcae914220acd4907840a029bb9d9aec, type: 3}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: beginningState
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: blockPrefab
@@ -1152,7 +1152,7 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 11418666, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: gameSeed
-      value: seedlyoo
+      value: weeble
       objectReference: {fileID: 0}
     - target: {fileID: 11427960, guid: 0a6d1ac435e884ebdbc9f97320f511f7, type: 3}
       propertyPath: regularTileSet.typeUVs.Array.size
