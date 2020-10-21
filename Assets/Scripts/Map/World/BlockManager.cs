@@ -3,10 +3,9 @@ using LibNoise.Unity.Generator;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Mirror;
 using UnityEngine.Profiling;
 
-public class BlockManager : NetworkBehaviour
+public class BlockManager : MonoBehaviour
 {
     public static List<HexBlock> blocks;
     public static List<GameObject> plates;
@@ -24,7 +23,7 @@ public class BlockManager : NetworkBehaviour
     //public Transform playerTrans;
     public TileType toPlace;
     public static int maxBlocks = 4608;
-    public static int maxHeight = 128;
+    public static int maxHeight = 32;
     public float updateStep = 1;
     public float updateTimer = 0;
     float uvTileWidth = 1.0f / 16f;
@@ -71,7 +70,6 @@ public class BlockManager : NetworkBehaviour
 
     
     //@TODO: client should do the raytracing and pass in blockIndex
-    [Command(ignoreAuthority = true)]
     public void CmdRayPlaceBlock(Vector3 rayPos, Vector3 rayFor, TileType toplace) {
         Debug.Log("placing");
         toPlace = toplace;
@@ -172,7 +170,6 @@ public class BlockManager : NetworkBehaviour
         }
     }
 
-    [Command(ignoreAuthority = true)]
     public void CmdRayRemoveBlock(Vector3 rayPos, Vector3 rayFor) {
         Ray ray = new Ray(rayPos, rayFor);
         RaycastHit hit = new RaycastHit();
@@ -211,14 +208,9 @@ public class BlockManager : NetworkBehaviour
             }
         }
     }
-
-    [ClientRpc]
     public void RpcCreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
     {
-        if (!isServer)
-        {
             blocks.Add(CreateBlock(hexTileInd, type, blockHeight, isBreakable, quarterBlock));
-        }
     }
 
     public HexBlock CreateBlock(int hexTileInd, TileType type, int blockHeight, bool isBreakable, bool quarterBlock)
@@ -559,11 +551,9 @@ public class BlockManager : NetworkBehaviour
         return output;
     }
 
-    [ClientRpc]
     public void RpcAddToPlate(int plateId)
     {
-        if (!isServer)
-        {
+
             int blockInd = blocks.Count - 1;
             Debug.Log("block index on adding " + blockInd);
             GameObject plate = plates[plateId];
@@ -819,7 +809,6 @@ public class BlockManager : NetworkBehaviour
             m.uv = uvs.ToArray();
             mf.sharedMesh = m;
             mc.sharedMesh = m;
-        }
     }
 
     public void AddToPlate(int plateId)
@@ -1082,11 +1071,9 @@ public class BlockManager : NetworkBehaviour
         //return output;
     }
 
-    [ClientRpc]
     public void RpcRemoveFromPlate(int plateInd, int blockInWorld)
     {
-        if (!isServer)
-        {
+
             GameObject plate = plates[plateInd];
             //HexBlock hb = blocks[block];
             MeshFilter mf = plate.GetComponent<MeshFilter>();
@@ -1176,7 +1163,6 @@ public class BlockManager : NetworkBehaviour
             //m.triangles = triangles.ToArray();
             mf.sharedMesh = m;
             mc.sharedMesh = m;
-        }
     }
 
     public void RemoveFromPlate(int plateInd, int blockInWorld)

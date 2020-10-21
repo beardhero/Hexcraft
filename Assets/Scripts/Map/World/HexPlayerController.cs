@@ -1,9 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Mirror;
 
-public class HexPlayerController : NetworkBehaviour {
+public class HexPlayerController : MonoBehaviour {
 	Rigidbody rigbody;
 	Transform trans;
 	GameObject player;
@@ -51,8 +50,6 @@ public class HexPlayerController : NetworkBehaviour {
     //public Runebook runeBook;
     // Use this for initialization
     void Start () {
-        if (isLocalPlayer)
-        {
             // This hides the cursor
             Cursor.lockState = CursorLockMode.Locked;
 
@@ -92,22 +89,12 @@ public class HexPlayerController : NetworkBehaviour {
             //{
             //	Instantiate(r.RuneGO());
             //}
-        }
-        else {
-            gameObject.GetComponent<Animator>().enabled = false;
-            gameObject.GetComponent<CapsuleCollider>().enabled = false;
-            Destroy(gameObject.GetComponent<Rigidbody>());
-            Destroy(gameObject.transform.GetChild(2).gameObject);
-            Destroy(gameObject.transform.GetChild(3).gameObject);
-            this.enabled = false;
-        }
 		
 	}
     void Update()
     {
         RotateSkybox();
-        if (isLocalPlayer)
-        {
+
             if (Input.GetAxis("Mouse ScrollWheel") > 0f) {
                 if(emh.anchoredPosition3D == firePos) { emh.anchoredPosition3D = earthPos; blockman.toPlace = TileType.Earth; }
                 else if(emh.anchoredPosition3D == waterPos) { emh.anchoredPosition3D = airPos; blockman.toPlace = TileType.Air; }
@@ -158,13 +145,11 @@ public class HexPlayerController : NetworkBehaviour {
             {
                 canJump = false;
             }
-        }
     }
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (isLocalPlayer)
-        {
+
             //normalize down
             //gravityDir = (origin - trans.position).normalized;
             gravityDir = -trans.position.normalized;
@@ -219,7 +204,6 @@ public class HexPlayerController : NetworkBehaviour {
             zoomMax = mag * zoomFactor;
             //zoomMin = mag * zoomFactor;
             BlockManager.rayrange = mag * rayScaleFactor;
-        }
     }
 
     void RotateSkybox(){
@@ -228,8 +212,7 @@ public class HexPlayerController : NetworkBehaviour {
     }
 	void OnCollisionEnter(Collision collision)
 	{
-        if (isLocalPlayer)
-        {
+
             if (numberOfJumps > 0)
             {
                 numberOfJumps = 0;
@@ -239,16 +222,15 @@ public class HexPlayerController : NetworkBehaviour {
                     canJump = true;
                 }
             }
-        }
+
         //animator.Play("Idle");
 	}
 
     void OnCollisionStay(Collision collision)
     {
-        if (isLocalPlayer){
+
             numberOfJumps = 0;
             canJump = true;
             jumped = false; 
-        }
 	}
 }

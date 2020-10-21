@@ -2,8 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
-using Mirror;
-public class CombatManager : NetworkBehaviour
+public class CombatManager : MonoBehaviour
 {
   public int roundTimer = 6;
   public static World activeWorld;
@@ -22,7 +21,6 @@ public class CombatManager : NetworkBehaviour
 
   void Update()
   {
-    if (!isServer) return;
 
     // Server checks distance between players and hostile units, initiating combat if within combatThresholdDistance
     foreach (Commander c in commanders)

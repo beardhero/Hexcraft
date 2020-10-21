@@ -4,11 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using System.IO;
-using Mirror;
 
 public enum RelativityState {None, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
-public class GameManager : NetworkBehaviour
+public class GameManager : MonoBehaviour
 {
   // === Const & Inspector Cache ===
   public RelativityState beginningState = RelativityState.WorldMap;
