@@ -1,13 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Runtime.Serialization;
+using System;
 
-[System.Serializable]
+[Serializable]
 public class Hexagon
 {
-  public int index;
+  [NonSerialized] public int index;    // Doesn't need serialized as the index is identical to its containing HexTile
   public SerializableVector3 center, normal, v1, v2, v3, v4, v5, v6;
-  public int uv0i, uv1i, uv2i, uv3i, uv4i, uv5i, uv6i;
-  public int[] neighbors;
+  [NonSerialized] public int uv0i, uv1i, uv2i, uv3i, uv4i, uv5i, uv6i;   // These are also 0's
+  [NonSerialized] public int[] neighbors; // not used?? always is -1
   public bool isPentagon;
   private float _scale;
 	public float scale { get{return _scale;}

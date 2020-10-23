@@ -11,12 +11,15 @@
  public struct SerializableVector3
  {
     public float x, y, z;
+    [NonSerialized] public float magnitude, sqrMagnitude;
 
     public SerializableVector3(float rX, float rY, float rZ)
     {
         x = rX;
         y = rY;
         z = rZ;
+        sqrMagnitude = x*x + y*y + z*z;
+        magnitude = Mathf.Sqrt(sqrMagnitude);
     }
 
     public Vector3 toVector(SerializableVector3 v)
@@ -33,30 +36,15 @@
         return String.Format("[{0}, {1}, {2}]", x, y, z);
     }
 
-    public float magnitude
-    {
-    get{return (Mathf.Sqrt(sqrMagnitude));}
-    set{}
-    }
-
-    public float sqrMagnitude
-    {
-    get{
-      return (x*x + y*y + z*z);
-    }
-    set{}
-    }
-
     public void Normalize()
     {
-    if (sqrMagnitude == 0)
-    {
-      return;
-    }
-    float m = magnitude;
-    x /= m;
-    y /= m;
-    z /= m;
+      if (sqrMagnitude == 0)
+      {
+        return;
+      }
+      x /= magnitude;
+      y /= magnitude;
+      z /= magnitude;
     }
      
      

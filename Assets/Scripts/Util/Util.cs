@@ -1,9 +1,40 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections;
+using System.IO;
 
 public class Util
 {
+  public void CapturePNG()
+  {
+    RenderTexture.active = Camera.main.targetTexture;
+    
+    //GameObject selection = GameObject.Find ("Zone Prefab(Clone)");
+        Camera.main.backgroundColor = Color.clear;
+        int width = 1024;
+        int height = 1024;
+        Texture2D tex = new Texture2D (width, height, TextureFormat.ARGB32, false);
+        Rect sel = new Rect ();
+        sel.width = width;
+        sel.height = height;
+        //sel.position = new Vector2(0,0);
+
+        tex.ReadPixels (sel, 0, 0);
+        /* 
+        for(int x = 0; x < tex.width; x++)
+        {
+          for(int y = 0; y < tex.height; y++)
+          {
+            if(tex.GetPixel(x,y) == Color.clear)
+            {
+              
+            }
+          }
+        }
+        */
+        byte[] bytes = tex.EncodeToPNG ();
+        File.WriteAllBytes ("Assets/Cards/card.png", bytes);
+  }
 }
 
 [Serializable]

@@ -21,7 +21,8 @@ public class CombatManager : MonoBehaviour
 
   void Update()
   {
-
+    if (instance == null || commanders.Count < 1) return;
+    
     // Server checks distance between players and hostile units, initiating combat if within combatThresholdDistance
     foreach (Commander c in commanders)
     {

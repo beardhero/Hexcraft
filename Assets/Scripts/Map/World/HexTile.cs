@@ -2,31 +2,182 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 [Serializable]
 public class HexTile
 {
   public int index;
-  public int biomeIndex;
-  public int plate = -1;
-  public int generation = 0;
+  [NonSerialized] public int biomeIndex;
+  [NonSerialized] public int plate = -1;
+  [NonSerialized] public int generation = 0;
   public float height = 1;
-  string terrainType;
+  [NonSerialized] string terrainType;
   public Hexagon hexagon;
   public TileType type = TileType.Gray;
-  public TileType typeToSet;
-  public int objectToPlace = -1;
+  [NonSerialized] public TileType typeToSet;
+  [NonSerialized] public int objectToPlace = -1;
   public List<int> neighbors;
-  public bool plateOrigin;
-  public bool boundary;
+  [NonSerialized] public bool plateOrigin;
+  [NonSerialized] public bool boundary;
   public bool passable = true;
-  public bool oceanTile = false;
-  public bool[] rules;
-  public bool flip;
-  public bool placeObject;
-  public int antPasses = 0;
-  public int state;
-    /*
+  [NonSerialized] public bool oceanTile = false;
+  [NonSerialized] public bool[] rules;
+  [NonSerialized] public bool flip;
+  [NonSerialized] public bool placeObject;
+  [NonSerialized] public int antPasses = 0;
+  [NonSerialized] public int state;
+
+  // (Deprecated rulesets have been moved to bottom)
+
+  //Tectonics
+  [NonSerialized] public float pressure, shear, scale, temp, humidity;
+
+  private float _elevation;
+  public float elevation
+  {
+    get { return _elevation; }
+    set { _elevation = value; }
+  }
+  private float _heat;
+
+  public float heat
+  {
+    get { return _heat; }
+    set { _heat = value; }
+  }
+  private float _precipitation;
+
+  public float precipitation
+  {
+    get { return _precipitation; }
+    set { _precipitation = value; }
+  }
+  public HexTile() { }
+
+  public HexTile(ServerTile s)
+  {
+	// grab normals and vertices from baseworld
+  }
+
+  public HexTile(Hexagon h)
+  {
+    index = h.index;
+    hexagon = h;
+  }
+  public HexTile(Hexagon h, int p, List<int> neighbs, bool b, float hi, TileType t, bool origin)
+  {
+    type = t;
+    index = h.index;
+    hexagon = h;
+    plate = p;
+    boundary = b;
+    neighbors = new List<int>(neighbs);
+    height = hi;
+    plateOrigin = origin;
+  }
+  public void ChangeType(TileType t)
+  {
+    type = t;
+	state = (int)t;
+	GameObject aW = GameObject.Find ("World");
+	GameObject gOWM = GameObject.Find ("WorldManager");
+	WorldManager wM = gOWM.GetComponent<WorldManager> ();
+	//World aWorld = wM.activeWorld;
+	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
+	Mesh mesh = meshC [plate].sharedMesh;
+	IntCoord newCoord = wM.regularTileSet.GetUVForType(t);
+	newCoord.y = generation;
+	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
+	Vector2[] uvs = mesh.uv;
+	try{
+	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
+	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
+	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
+	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
+	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
+	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
+	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
+	mesh.uv = uvs;
+	}
+	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
+  }
+
+  public void MoveHighlight()
+  {
+	GameObject aW = GameObject.Find ("World");
+	GameObject gOWM = GameObject.Find ("WorldManager");
+	WorldManager wM = gOWM.GetComponent<WorldManager> ();
+	//World aWorld = wM.activeWorld;
+	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
+	Mesh mesh = meshC [plate].sharedMesh;
+	IntCoord newCoord = wM.regularTileSet.GetUVForType(type);
+	newCoord.y += 21; //highlight
+	//newCoord.y = generation;
+	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
+	Vector2[] uvs = mesh.uv;
+	try{
+	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
+	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
+	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
+	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
+	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
+	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
+	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
+	mesh.uv = uvs;
+	}
+	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
+  }
+  public void MoveUnhighlight()
+  {
+	GameObject aW = GameObject.Find ("World");
+	GameObject gOWM = GameObject.Find ("WorldManager");
+	WorldManager wM = gOWM.GetComponent<WorldManager> ();
+	//World aWorld = wM.activeWorld;
+	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
+	Mesh mesh = meshC [plate].sharedMesh;
+	IntCoord newCoord = wM.regularTileSet.GetUVForType(type);
+	newCoord.y -= 21; //unhighlight
+	//newCoord.y = generation;
+	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
+	Vector2[] uvs = mesh.uv;
+	try{
+	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
+	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
+	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
+	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
+	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
+	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
+	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
+	mesh.uv = uvs;
+	}
+	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
+  }
+
+	public void ChangeRule(bool[] bs)
+	{
+		rules = bs;
+	}
+
+	public TileType[] GetOpposingElements()
+	{
+		TileType[] opp = new TileType[4];
+		switch(type)
+		{
+			case TileType.Water: opp[0] = TileType.Fire; opp[1] = TileType.Air; opp[2] = TileType.Light; opp[3] = TileType.Sol; break;
+			case TileType.Earth: opp[0] = TileType.Air; opp[1] = TileType.Fire; opp[2] = TileType.Light; opp[3] = TileType.Sol; break;
+			case TileType.Dark: opp[0] = TileType.Light; opp[1] = TileType.Air; opp[2] = TileType.Fire; opp[3] = TileType.Sol; break; 
+			case TileType.Luna:  opp[0] = TileType.Sol; opp[1] = TileType.Air; opp[2] = TileType.Light; opp[3] = TileType.Fire; break;
+			case TileType.Fire: opp[0] = TileType.Water; opp[1] = TileType.Earth; opp[2] = TileType.Dark; opp[3] = TileType.Luna; break;
+			case TileType.Air: opp[0] = TileType.Earth; opp[1] = TileType.Water; opp[2] = TileType.Dark; opp[3] = TileType.Luna; break;
+			case TileType.Light: opp[0] = TileType.Dark; opp[1] = TileType.Earth; opp[2] = TileType.Water; opp[3] = TileType.Luna; break;
+			case TileType.Sol: opp[0] = TileType.Luna; opp[1] = TileType.Earth; opp[2] = TileType.Dark; opp[3] = TileType.Water; break;
+			default: break;
+		}
+		return opp;
+	}
+
+	    /*
 	//Each tile has it's own rule set, rule changes turn these bools on and off accordingly
 	public bool os1, os2, os3, os4, os5, os6, ob1, ob2, ob3, ob4, ob5, ob6,
 	ws1, ws2, ws3, ws4, ws5, ws6, wb1, wb2, wb3, wb4, wb5, wb6,
@@ -214,148 +365,6 @@ public class HexTile
 		if (b [83])
 			nb6 = true;
 	} */
-
-  //Tectonics
-  public float pressure, shear, scale, temp, humidity;
-
-  private float _elevation;
-  public float elevation
-  {
-    get { return _elevation; }
-    set { _elevation = value; }
-  }
-  private float _heat;
-
-  public float heat
-  {
-    get { return _heat; }
-    set { _heat = value; }
-  }
-  private float _precipitation;
-
-  public float precipitation
-  {
-    get { return _precipitation; }
-    set { _precipitation = value; }
-  }
-  public HexTile() { }
-
-  public HexTile(Hexagon h)
-  {
-    index = h.index;
-    hexagon = h;
-  }
-  public HexTile(Hexagon h, int p, List<int> neighbs, bool b, float hi, TileType t, bool origin)
-  {
-    type = t;
-    index = h.index;
-    hexagon = h;
-    plate = p;
-    boundary = b;
-    neighbors = new List<int>(neighbs);
-    height = hi;
-    plateOrigin = origin;
-  }
-  public void ChangeType(TileType t)
-  {
-    type = t;
-	state = (int)t;
-	GameObject aW = GameObject.Find ("World");
-	GameObject gOWM = GameObject.Find ("WorldManager");
-	WorldManager wM = gOWM.GetComponent<WorldManager> ();
-	//World aWorld = wM.activeWorld;
-	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
-	Mesh mesh = meshC [plate].sharedMesh;
-	IntCoord newCoord = wM.regularTileSet.GetUVForType(t);
-	newCoord.y = generation;
-	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
-	Vector2[] uvs = mesh.uv;
-	try{
-	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
-	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
-	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
-	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
-	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
-	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
-	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
-	mesh.uv = uvs;
-	}
-	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
-  }
-
-  public void MoveHighlight()
-  {
-	GameObject aW = GameObject.Find ("World");
-	GameObject gOWM = GameObject.Find ("WorldManager");
-	WorldManager wM = gOWM.GetComponent<WorldManager> ();
-	//World aWorld = wM.activeWorld;
-	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
-	Mesh mesh = meshC [plate].sharedMesh;
-	IntCoord newCoord = wM.regularTileSet.GetUVForType(type);
-	newCoord.y += 21; //highlight
-	//newCoord.y = generation;
-	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
-	Vector2[] uvs = mesh.uv;
-	try{
-	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
-	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
-	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
-	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
-	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
-	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
-	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
-	mesh.uv = uvs;
-	}
-	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
-  }
-  public void MoveUnhighlight()
-  {
-	GameObject aW = GameObject.Find ("World");
-	GameObject gOWM = GameObject.Find ("WorldManager");
-	WorldManager wM = gOWM.GetComponent<WorldManager> ();
-	//World aWorld = wM.activeWorld;
-	MeshCollider[] meshC = aW.transform.GetComponentsInChildren<MeshCollider>();
-	Mesh mesh = meshC [plate].sharedMesh;
-	IntCoord newCoord = wM.regularTileSet.GetUVForType(type);
-	newCoord.y -= 21; //unhighlight
-	//newCoord.y = generation;
-	Vector2 newOffset = new Vector2((newCoord.x * WorldRenderer.uvTileWidth), (newCoord.y * WorldRenderer.uvTileHeight));
-	Vector2[] uvs = mesh.uv;
-	try{
-	uvs [hexagon.uv0i] = WorldRenderer.uv0 + newOffset;
-	uvs [hexagon.uv1i] = WorldRenderer.uv1 + newOffset;
-	uvs [hexagon.uv2i] = WorldRenderer.uv2 + newOffset;
-	uvs [hexagon.uv3i] = WorldRenderer.uv3 + newOffset;
-	uvs [hexagon.uv4i] = WorldRenderer.uv4 + newOffset;
-	uvs [hexagon.uv5i] = WorldRenderer.uv5 + newOffset;
-	uvs [hexagon.uv6i] = WorldRenderer.uv6 + newOffset;
-	mesh.uv = uvs;
-	}
-	catch(Exception e){Debug.Log(" bad tile: " + index + " uv0: " + hexagon.uv0i + " error: " + e);}
-  }
-
-	public void ChangeRule(bool[] bs)
-	{
-		rules = bs;
-	}
-
-	public TileType[] GetOpposingElements()
-	{
-		TileType[] opp = new TileType[4];
-		switch(type)
-		{
-			case TileType.Water: opp[0] = TileType.Fire; opp[1] = TileType.Air; opp[2] = TileType.Light; opp[3] = TileType.Sol; break;
-			case TileType.Earth: opp[0] = TileType.Air; opp[1] = TileType.Fire; opp[2] = TileType.Light; opp[3] = TileType.Sol; break;
-			case TileType.Dark: opp[0] = TileType.Light; opp[1] = TileType.Air; opp[2] = TileType.Fire; opp[3] = TileType.Sol; break; 
-			case TileType.Luna:  opp[0] = TileType.Sol; opp[1] = TileType.Air; opp[2] = TileType.Light; opp[3] = TileType.Fire; break;
-			case TileType.Fire: opp[0] = TileType.Water; opp[1] = TileType.Earth; opp[2] = TileType.Dark; opp[3] = TileType.Luna; break;
-			case TileType.Air: opp[0] = TileType.Earth; opp[1] = TileType.Water; opp[2] = TileType.Dark; opp[3] = TileType.Luna; break;
-			case TileType.Light: opp[0] = TileType.Dark; opp[1] = TileType.Earth; opp[2] = TileType.Water; opp[3] = TileType.Luna; break;
-			case TileType.Sol: opp[0] = TileType.Luna; opp[1] = TileType.Earth; opp[2] = TileType.Dark; opp[3] = TileType.Water; break;
-			default: break;
-		}
-		return opp;
-	}
     
 	/*public void HexLifeShift(HexTile[] neighbs)
 	{

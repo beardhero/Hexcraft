@@ -86,6 +86,13 @@ public class World
     origin = Vector3.zero;
   }
 
+  public World(List<HexTile> baseTiles, List<ServerTile> serverTiles)
+  {
+    origin = Vector3.zero;
+    tiles = new List<HexTile>();
+    Debug.Log("Hooray! "+ baseTiles[0].hexagon.center.x + " ---- "+serverTiles[2].center);
+  }
+
   public World(WorldSize s, WorldType t, Season se, AxisTilt at)
   {
     size = s;

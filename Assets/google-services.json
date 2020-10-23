@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "84454750976",
+    "firebase_url": "https://hexworld-293023.firebaseio.com",
+    "project_id": "hexworld-293023",
+    "storage_bucket": "hexworld-293023.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84454750976:android:64777f7ea8b0e825cd91e5",
+        "android_client_info": {
+          "package_name": "com.RuinedCanvas.HexWorld"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84454750976-c9c8m7363qtril2fp083c7f2i77cci9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABudQwv4g_jG5hvYMBwofUztHLHHvKepk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84454750976-c9c8m7363qtril2fp083c7f2i77cci9m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -47,11 +47,11 @@ public class HexPlayerController : MonoBehaviour {
     Vector3 lightPos = new Vector3(-390.9f, -139.6f, 0);
     Vector3 darkPos = new Vector3(-390.9f, -250.6f, 0);
 
-    //public Runebook runeBook;
-    // Use this for initialization
-    void Start () {
+    bool initialized;
+
+    public void Initialize () {
             // This hides the cursor
-            Cursor.lockState = CursorLockMode.Locked;
+            //Cursor.lockState = CursorLockMode.Locked;
 
             player = gameObject;
             trans = player.transform;
@@ -61,14 +61,13 @@ public class HexPlayerController : MonoBehaviour {
             rigbody.useGravity = false;
             rigbody.freezeRotation = true;
             cam = gameObject.GetComponentInChildren<Camera>();
-            //wM = GameObject.Find("WorldManager").GetComponent<WorldManager>();
             aW = WorldManager.activeWorld;
             animator = player.GetComponent<Animator>();
             animator.enabled = true;
             animator.Play("Idle");
             blockman = GameObject.FindGameObjectWithTag("Block Manager").GetComponent<BlockManager>(); 
             trans.position = aW.tiles[1].hexagon.center * 10f;
-            //origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
+            origin = new Vector3(aW.origin.x, aW.origin.y, aW.origin.z);
             emh = elementMenuHighlight.GetComponent<RectTransform>();
             emh.anchoredPosition3D = firePos;
             //runebook test
@@ -89,10 +88,12 @@ public class HexPlayerController : MonoBehaviour {
             //{
             //	Instantiate(r.RuneGO());
             //}
-		
+        initialized = true;
 	}
     void Update()
     {
+        if (!initialized)   return;
+        
         RotateSkybox();
 
             if (Input.GetAxis("Mouse ScrollWheel") > 0f) {
@@ -149,7 +150,8 @@ public class HexPlayerController : MonoBehaviour {
     // Update is called once per frame
     void FixedUpdate()
     {
-
+        if (!initialized)   return;
+        
             //normalize down
             //gravityDir = (origin - trans.position).normalized;
             gravityDir = -trans.position.normalized;

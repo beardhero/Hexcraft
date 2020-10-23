@@ -4,28 +4,12 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Fly
-  - Monster
-  - MinimapCamera
-  - Fire
-  - InventorySlot
-  - EquipmentSlot
-  - TrashSlot
-  - SkillsSlot
-  - SkillbarSlot
-  - DragAndDropHandler
-  - LootSlot
-  - NpcSellSlot
-  - TradingSlot
   - Npc
-  - CraftingIngredientSlot
-  - CraftingResultSlot
-  - ItemMallSlot
-  - Pet
-  - NpcPetReviveSlot
   - World Manager
   - Block Manager
   - Network Manager
+  - Network Controller
+  - CombatManager
   layers:
   - Default
   - TransparentFX

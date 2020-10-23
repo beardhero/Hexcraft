@@ -2,33 +2,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
+using System;
 
+[Serializable]
 public class PolySphere
 {
-  public static Random rnd = new Random();
   //Initial icosahedron coords
-  public static List<Vector3> icoCoords;
-  public GameObject go; //Using this transform to rotate around centers of hexes
-  public Vector3 origin;
-  public int subdivisions;
-  public float scale = 24;
-  public float avgTileHeight;
-  public float tileCount;
-  public TileType element;
+  [NonSerialized] public static List<Vector3> icoCoords;
+  [NonSerialized] public GameObject go; //Using this transform to rotate around centers of hexes
+  [NonSerialized] public Vector3 origin;
+  [NonSerialized] public int subdivisions;
+  [NonSerialized] public float scale = 24;
+  [NonSerialized] public float avgTileHeight;
+  [NonSerialized] public float tileCount;
+  [NonSerialized] public TileType element;
 
-  public List<Triangle> icosahedronTris;
-  public List<List<Triangle>> subdividedTris;
-  public List<Triangle> finalTris;    // The finest level of subdivided tris
+  [NonSerialized] public List<Triangle> icosahedronTris;
+  [NonSerialized] public List<List<Triangle>> subdividedTris;
+  [NonSerialized] public List<Triangle> finalTris;    // The finest level of subdivided tris
   public List<HexTile> hexTiles;
   //public List<HexTile> orbitTiles;
-  public List<TriTile> triTiles;  // This is unused currently
-  public List<SphereTile> sTiles; //the tiles on this sphere
-  public List<List<SphereTile>> tPlates;
-  public List<Plate> plates;
-  public int numberOfPlates;
-  public int maxTilesPerPlate = 54;
-  public float initialHeight;
-  public float oceanProb = 0.6f; //redacted
+  [NonSerialized] public List<TriTile> triTiles;  // This is unused currently
+  [NonSerialized] public List<SphereTile> sTiles; //the tiles on this sphere
+  [NonSerialized] public List<List<SphereTile>> tPlates;
+  [NonSerialized] public List<Plate> plates;
+  [NonSerialized] public int numberOfPlates;
+  [NonSerialized] public int maxTilesPerPlate = 54;
+  [NonSerialized] public float initialHeight;
+  [NonSerialized] public float oceanProb = 0.6f; //redacted
   
   public PolySphere(){}
 
@@ -156,7 +158,7 @@ public class PolySphere
 
     foreach(Plate p in plates)
     {
-      t = tta[Random.Range(0,12)];
+      t = tta[UnityEngine.Random.Range(0,12)];
       foreach(SphereTile st in p.tiles)
       {
         st.type = t;
@@ -473,7 +475,7 @@ public class PolySphere
             {
               //Debug.Log(p.oceanic + " second " + p.index);
               //ocean
-              float rand = Random.Range(0, 1.0f);
+              float rand = UnityEngine.Random.Range(0, 1.0f);
               if (rand < oceanProb)
               {
                 st.type = TileType.Water;

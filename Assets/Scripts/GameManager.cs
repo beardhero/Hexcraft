@@ -4,8 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using System.IO;
+using Newtonsoft.Json;
 
-public enum RelativityState {None, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
+public enum RelativityState {None, CacheBaseworld, Lobby, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
 public class GameManager : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class GameManager : MonoBehaviour
   public string gameSeed = "doesthisneedtobemorethaneightchars";
 
   // === Static Cache ===
+  public static GameManager instance;
   static RelativityState state;
   public static Transform myTrans;
   public static RelativityState State {get{return state;} set{}}
@@ -41,6 +43,7 @@ public class GameManager : MonoBehaviour
   public GameObject blockPrefab;
 
     private void Start() {
+      instance = this;
             Init();
     }
 
@@ -58,6 +61,20 @@ public class GameManager : MonoBehaviour
         bool loading;
         switch (state)
         {
+          // Note: all but first two states have been deprecated
+          case RelativityState.Lobby:
+            // @TODO: render some kind of character lobby or homeworld to show before going online.
+          break;
+
+          case RelativityState.CacheBaseworld:
+            PerlinType.globalSeed = gameSeed;
+
+            CacheOnly();
+
+            Debug.Log("baseworld.json saved to Resources and tilemap.json saved to Cache");
+            Application.Quit();
+          break;
+
           case RelativityState.WorldDuel:
             loading = true;
             InitializeWorld(loading);
@@ -89,6 +106,41 @@ public class GameManager : MonoBehaviour
       }
   }
 
+  void CacheOnly()
+  {
+    PolySphere sphere = new PolySphere(Vector3.zero, WorldManager.worldScale, WorldManager.worldSubdivisions);
+
+    // Serialize Vertex Data to JSON, for clients to use in building geometry
+    JsonSerializer serializer = new JsonSerializer();
+    //serializer.Formatting = Formatting.Indented;  // indentation increases file size by 200%
+    
+    using (StreamWriter sw = new StreamWriter(Application.dataPath+"\\Resources\\baseworld.json"))   // Note DO NOT use any encoding options
+    using (JsonWriter writer = new JsonTextWriter(sw))
+    {
+        serializer.Serialize(writer, sphere);
+    }
+
+    // Serialize index and neighbor data, as well as hexagon center, for server to use in generating worlds
+    List<ServerTile> tiles = new List<ServerTile>();
+    foreach (HexTile ht in sphere.hexTiles){
+      tiles.Add(new ServerTile(ht));  // copy constructor
+    }
+
+    using (StreamWriter sw = new StreamWriter(Application.dataPath+"\\Cache\\tilemap.json"))
+    using (JsonWriter writer = new JsonTextWriter(sw))
+    {
+        serializer.Serialize(writer, tiles);
+    }
+
+    
+
+  }
+
+  public static void IniitalizeServerWorld(List<ServerTile> tiles){
+    worldManagerObj = GameObject.FindWithTag("World Manager");
+    worldManager = worldManagerObj.GetComponent<WorldManager>();
+    worldManager.InitializeServerWorld(instance.blockPrefab, tiles);
+  }
   void InitializeWorld(bool loading)
   {
     worldManagerObj = GameObject.FindWithTag("World Manager");
@@ -100,7 +152,7 @@ public class GameManager : MonoBehaviour
 
   void InitializeCombat()
   {
-    combatManagerObj = GameObject.FindWithTag("Combat Manager");
+    combatManagerObj = GameObject.FindWithTag("CombatManager");
     combatManager = combatManagerObj.GetComponent<CombatManager>();
     combatManager.Initialize(currentWorld);
   }
@@ -152,51 +204,5 @@ public class GameManager : MonoBehaviour
     currentZoneObjects = zoneRenderer.RenderZone(currentZone, zoneManager.regularTileSet);
     //zoneManager.Initialize(currentZone);
     //CapturePNG();
-  }
-
-  public void CapturePNG()
-  {
-    RenderTexture.active = Camera.main.targetTexture;
-    
-    //GameObject selection = GameObject.Find ("Zone Prefab(Clone)");
-        Camera.main.backgroundColor = Color.clear;
-        int width = 1024;
-        int height = 1024;
-        Texture2D tex = new Texture2D (width, height, TextureFormat.ARGB32, false);
-        Rect sel = new Rect ();
-        sel.width = width;
-        sel.height = height;
-        //sel.position = new Vector2(0,0);
-
-        tex.ReadPixels (sel, 0, 0);
-        /* 
-        for(int x = 0; x < tex.width; x++)
-        {
-          for(int y = 0; y < tex.height; y++)
-          {
-            if(tex.GetPixel(x,y) == Color.clear)
-            {
-              
-            }
-          }
-        }
-        */
-        byte[] bytes = tex.EncodeToPNG ();
-        File.WriteAllBytes ("Assets/Cards/card.png", bytes);
-  }
-
-  void OnGUI()
-  {
-    //mainUI.OnMainGUI(); TURN BACK ON LATER
-  }
-
-  public static void OnTapInput(Vector2 tap)
-  {
-    switch (state)
-    {
-      case RelativityState.ZoneMap:
-        roundManager.OnTapInput(tap);
-      break;
-    }
   }
 }

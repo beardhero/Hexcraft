@@ -46,8 +46,8 @@ public class ZoneViewCamera : MonoBehaviour {
       Vector2 touchDeltaPosition = currentPos - dragStartPos;
       
       // Interpret as tap
-      if (touchDeltaPosition.sqrMagnitude < tapRadiusSquared)
-        GameManager.OnTapInput(currentPos);
+      // if (touchDeltaPosition.sqrMagnitude < tapRadiusSquared)
+      //   GameManager.OnTapInput(currentPos);
     }
 
     // Zooming in/out
