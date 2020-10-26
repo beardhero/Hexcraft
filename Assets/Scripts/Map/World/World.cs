@@ -86,13 +86,47 @@ public class World
     origin = Vector3.zero;
   }
 
-  public World(List<HexTile> baseTiles, List<ServerTile> serverTiles)
+  public World(PolySphere baseworld, ServerWorld serverWorld)
   {
-    origin = Vector3.zero;
+    origin = Vector3.zero;    // Will we ever use this?
+    numberOfPlates = baseworld.numberOfPlates;
     tiles = new List<HexTile>();
-    Debug.Log("Hooray! "+ baseTiles[0].hexagon.center.x + " ---- "+serverTiles[2].center);
+
+    if (baseworld.hexTiles.Count != serverWorld.tiles.Count)
+      Debug.LogError("Count mismatch between baseworld and server world");
+
+    // Hard copy tile data
+    for(int i=0; i<serverWorld.tiles.Count; i++)
+    {
+      HexTile ht = new HexTile();
+      ht.index = i;
+      ht.height = serverWorld.tiles[i].height;
+
+      Hexagon h = new Hexagon();    // We don't use the previous hexagon builder constructor because we don't need to do normal calculation
+      h.index = i;
+      h.center = serverWorld.tiles[i].center;   // Functionally, local and server center should be the same
+      h.normal = baseworld.hexTiles[i].hexagon.normal;
+      h.v1 = baseworld.hexTiles[i].hexagon.v1;
+      h.v2 = baseworld.hexTiles[i].hexagon.v2;
+      h.v3 = baseworld.hexTiles[i].hexagon.v3;
+      h.v4 = baseworld.hexTiles[i].hexagon.v4;
+      h.v5 = baseworld.hexTiles[i].hexagon.v5;
+      h.v6 = baseworld.hexTiles[i].hexagon.v6;
+      // @TODO: is hexagon.uv's used at all? seems like it once was but not any more
+      //h.neighbors = baseworld.hexTiles[i].neighbors.ToArray<int>();   // hexagon neighbors also deprecated?
+      h.isPentagon = serverWorld.tiles[i].isPentagon;   // Either copy could be used
+      // Not setting hexagon scale because I'm not sure how it's used (is it supposed to be a Scale() method?)
+      ht.hexagon = h;
+
+      ht.type = serverWorld.tiles[i].type;
+      ht.neighbors = baseworld.hexTiles[i].neighbors;   // Should go either way
+      ht.passable = serverWorld.tiles[i].passable;
+      ht.plate = baseworld.hexTiles[i].plate;
+      tiles.Add(ht);
+    }
   }
 
+  // deprecated
   public World(WorldSize s, WorldType t, Season se, AxisTilt at)
   {
     size = s;
@@ -101,7 +135,8 @@ public class World
     tilt = at;
     origin = Vector3.zero;
   }
-  
+
+    // Deprecated  
     public void Populate(string seed)
     {
       // Base heighmap

@@ -4,61 +4,37 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-[Serializable]
+[DataContract]
 public class HexTile
 {
-  public int index;
-  [NonSerialized] public int biomeIndex;
-  [NonSerialized] public int plate = -1;
-  [NonSerialized] public int generation = 0;
-  public float height = 1;
-  [NonSerialized] string terrainType;
-  public Hexagon hexagon;
-  public TileType type = TileType.Gray;
-  [NonSerialized] public TileType typeToSet;
-  [NonSerialized] public int objectToPlace = -1;
-  public List<int> neighbors;
-  [NonSerialized] public bool plateOrigin;
-  [NonSerialized] public bool boundary;
-  public bool passable = true;
-  [NonSerialized] public bool oceanTile = false;
-  [NonSerialized] public bool[] rules;
-  [NonSerialized] public bool flip;
-  [NonSerialized] public bool placeObject;
-  [NonSerialized] public int antPasses = 0;
-  [NonSerialized] public int state;
+  [DataMember] public int index;
+  public int biomeIndex;
+  [DataMember] public int plate = -1;
+  public int generation = 0;
+  [DataMember] public float height = 1;
+  string terrainType;
+  [DataMember] public Hexagon hexagon;
+  [DataMember] public TileType type = TileType.Gray;
+  public TileType typeToSet;
+  public int objectToPlace = -1;
+  [DataMember] public List<int> neighbors;
+  public bool plateOrigin;
+  public bool boundary;
+  [DataMember] public bool passable = true;
+  public bool oceanTile = false;
+  public bool[] rules;
+  public bool flip;
+  public bool placeObject;
+  public int antPasses = 0;
+  public int state;
 
   // (Deprecated rulesets have been moved to bottom)
 
   //Tectonics
   [NonSerialized] public float pressure, shear, scale, temp, humidity;
 
-  private float _elevation;
-  public float elevation
-  {
-    get { return _elevation; }
-    set { _elevation = value; }
-  }
-  private float _heat;
-
-  public float heat
-  {
-    get { return _heat; }
-    set { _heat = value; }
-  }
-  private float _precipitation;
-
-  public float precipitation
-  {
-    get { return _precipitation; }
-    set { _precipitation = value; }
-  }
+  // Elevation, heat, and precipitation were removed because the accessors wouldn't obey serialization rules
   public HexTile() { }
-
-  public HexTile(ServerTile s)
-  {
-	// grab normals and vertices from baseworld
-  }
 
   public HexTile(Hexagon h)
   {

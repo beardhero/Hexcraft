@@ -31,7 +31,7 @@ public class HPC : MonoBehaviour
     public float camRotateSpeed = 4.2f;
     public float camSens = .5f;
     public int spawnTile = 0;
-    public Runebook runeBook;
+    //public Runebook runeBook;
     // Use this for initialization
     void Start()
     {

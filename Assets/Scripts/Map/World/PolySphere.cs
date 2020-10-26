@@ -5,32 +5,32 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System;
 
-[Serializable]
+[DataContract]
 public class PolySphere
 {
   //Initial icosahedron coords
-  [NonSerialized] public static List<Vector3> icoCoords;
-  [NonSerialized] public GameObject go; //Using this transform to rotate around centers of hexes
-  [NonSerialized] public Vector3 origin;
-  [NonSerialized] public int subdivisions;
-  [NonSerialized] public float scale = 24;
-  [NonSerialized] public float avgTileHeight;
-  [NonSerialized] public float tileCount;
-  [NonSerialized] public TileType element;
+  public static List<Vector3> icoCoords;
+  public GameObject go; //Using this transform to rotate around centers of hexes
+  public Vector3 origin;
+  [DataMember] public int subdivisions;
+  [DataMember] public float scale = 24;
+  public float avgTileHeight;
+  public float tileCount;
+  public TileType element;
 
-  [NonSerialized] public List<Triangle> icosahedronTris;
-  [NonSerialized] public List<List<Triangle>> subdividedTris;
-  [NonSerialized] public List<Triangle> finalTris;    // The finest level of subdivided tris
-  public List<HexTile> hexTiles;
+  public List<Triangle> icosahedronTris;
+  public List<List<Triangle>> subdividedTris;
+  public List<Triangle> finalTris;    // The finest level of subdivided tris
+  [DataMember] public List<HexTile> hexTiles;
   //public List<HexTile> orbitTiles;
-  [NonSerialized] public List<TriTile> triTiles;  // This is unused currently
-  [NonSerialized] public List<SphereTile> sTiles; //the tiles on this sphere
-  [NonSerialized] public List<List<SphereTile>> tPlates;
-  [NonSerialized] public List<Plate> plates;
-  [NonSerialized] public int numberOfPlates;
-  [NonSerialized] public int maxTilesPerPlate = 54;
-  [NonSerialized] public float initialHeight;
-  [NonSerialized] public float oceanProb = 0.6f; //redacted
+  public List<TriTile> triTiles;  // This is unused currently
+  public List<SphereTile> sTiles; //the tiles on this sphere
+  public List<List<SphereTile>> tPlates;
+  public List<Plate> plates;
+  [DataMember] public int numberOfPlates;
+  public int maxTilesPerPlate = 54;
+  public float initialHeight;
+  public float oceanProb = 0.6f; //redacted
   
   public PolySphere(){}
 

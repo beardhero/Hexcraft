@@ -3,16 +3,16 @@ using System.Collections;
 using System.Runtime.Serialization;
 using System;
 
-[Serializable]
+[DataContract]
 public class Hexagon
 {
-  [NonSerialized] public int index;    // Doesn't need serialized as the index is identical to its containing HexTile
-  public SerializableVector3 center, normal, v1, v2, v3, v4, v5, v6;
-  [NonSerialized] public int uv0i, uv1i, uv2i, uv3i, uv4i, uv5i, uv6i;   // These are also 0's
-  [NonSerialized] public int[] neighbors; // not used?? always is -1
-  public bool isPentagon;
-  private float _scale;
-	public float scale { get{return _scale;}
+  public int index;    // Doesn't need serialized as the index is identical to its containing HexTile
+  [DataMember] public SerializableVector3 center, normal, v1, v2, v3, v4, v5, v6;
+  public int uv0i, uv1i, uv2i, uv3i, uv4i, uv5i, uv6i;   // These are also 0's
+  public int[] neighbors; // not used?? always is -1
+  [DataMember] public bool isPentagon;
+  [DataMember] private float _scale;
+  public float scale { get{return _scale;}
 	  set{
 			v1 /= v1.magnitude;
 			v1 *= value;
@@ -32,6 +32,7 @@ public class Hexagon
   }
 
   public Hexagon(){}
+
   public Hexagon(int i, Vector3 c, Vector3[] verts, SerializableVector3 origin)
   {
     index = i;

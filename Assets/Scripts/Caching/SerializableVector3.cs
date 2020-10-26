@@ -10,8 +10,10 @@
  [System.Serializable]
  public struct SerializableVector3
  {
-    public float x, y, z;
-    [NonSerialized] public float magnitude, sqrMagnitude;
+    public float x {get;set;}
+    public float y {get;set;}
+    public float z {get;set;}
+    public float magnitude, sqrMagnitude;
 
     public SerializableVector3(float rX, float rY, float rZ)
     {

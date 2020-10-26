@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// This is basically a trimmed-down version of HexTile
+// This is basically a trimmed-down version of HexTile. A lot of data seems extra but the server uses it
 // Ideally HexTile would inherit from this and add extra members, but I'm too lazy to do that rn
 //   (Also that probably wouldn't work without setting up conditional serialization of extra members of Hexagon, which would be a waste of computation)
 // This version is used for communication with server where file size matters

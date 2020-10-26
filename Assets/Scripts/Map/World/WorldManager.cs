@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Newtonsoft.Json;
 
 public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back front
 
@@ -9,6 +10,7 @@ public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back fr
 public class WorldManager : MonoBehaviour
 {
   // === Public ===
+  public static WorldManager instance;
   public GameObject oceanPrefab;
   public Transform worldObjectsContainer;
   //public GameObject player;
@@ -96,104 +98,34 @@ public class WorldManager : MonoBehaviour
 
   public BlockManager bM;
 
-  public void InitializeServerWorld(GameObject blockPrefab, List<ServerTile> serverTiles)
+  void Start(){
+    instance = this;
+  }
+  public void InitializeServerWorld(GameObject blockPrefab, ServerWorld serverWorld)
   {
     staticTileSet = regularTileSet;
     currentWorldObject = new GameObject("World");
     currentWorldTrans = currentWorldObject.transform;
     
-    PolySphere baseWorld = Newtonsoft.Json.JsonConvert.DeserializeObject<PolySphere>(Resources.Load<TextAsset>("baseworld").text);
-    
     // Load the baseworld and apply servertiles data to it
-    activeWorld = new World(baseWorld.hexTiles, serverTiles);
-    
-    // foreach(HexTile ht in activeWorld.tiles)
-    // {
-    //   if(ht.objectToPlace != -1)
-    //   {
-    //     Object g = new Object();
-    //     Vector3 v =  ht.hexagon.center - activeWorld.origin;
-    //     //ht.passable = false;
-    //     switch(ht.type)
-    //     {
-    //       case TileType.Gray:
-    //         g = misc[ht.objectToPlace]; 
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Water: 
-    //         g = waterBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Fire: 
-    //         g = fireBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Earth: 
-    //         g = earthBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Air: 
-    //         g = airBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Dark: 
-    //         g = darkBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Light: 
-    //         g = lightBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Ice: 
-    //         g = waterBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Metal: 
-    //         g = fireBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Arbor: 
-    //         g = earthBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Vapor: 
-    //         g = airBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Astral: 
-    //         g = darkBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       case TileType.Crystal: 
-    //         g = lightBiome[ht.objectToPlace];
-    //         Instantiate(g,ht.hexagon.center,Quaternion.FromToRotation(Vector3.up, v), p); break;
-    //       default: break;
-    //     }
-    //   }
-    // }
+    PolySphere baseWorld = JsonConvert.DeserializeObject<PolySphere>(Resources.Load<TextAsset>("baseworld").text);
+    Debug.Log("Loading world "+serverWorld.name+" from server");
+    activeWorld = new World(baseWorld, serverWorld);
 
-    
-    // worldRenderer = GetComponent<WorldRenderer>();
-    // //render plates
-    // foreach (GameObject g in worldRenderer.HexPlates(activeWorld, regularTileSet))
-    // {
-    //   g.transform.parent = currentWorldTrans;
-    //   //turned off hextile rendering
-    //   g.SetActive(false);
-    //   //g.GetComponent<MeshRenderer>().enabled = false;
-    //   //g.GetComponent<MeshCollider>().enabled = false;
-    // }
+    //render plates
+    worldRenderer = GetComponent<WorldRenderer>();
+    foreach (GameObject g in worldRenderer.HexPlates(activeWorld, regularTileSet))
+    {
+      g.transform.parent = currentWorldTrans;
+      //turned off hextile rendering
+      //g.SetActive(false); // why was this done?
+    }
 
-    // // Run BlockManager
-    // BlockManager bM = GameObject.Find("BlockManager").GetComponent<BlockManager>();
-    // BlockManager.blockScaleFactor /= worldSubdivisions;
-    // BlockManager.blockQuarterFactor /= worldSubdivisions;
-    // //place bedrock layer of blocks
-    // //generate heightmap from seed
-    // // Seed is assigned to PerlinType.globalSeed by GameManager.gameSeed
-    // bM.CreateBlocks();
-    // List<GameObject> plates = bM.BlockPlates(activeWorld, regularTileSet, blockPrefab);
-
-    // // Group plates for organization
-    // Transform plateContainer = worldObjectsContainer.Find("plate container");
-    // foreach (GameObject o in plates)
-    // {
-    //   o.transform.parent = plateContainer;
-    // }
-
-    // // Place ocean (if light world)
-    // GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
-    // ocean.transform.parent = worldObjectsContainer;
-    // float scale = activeWorld.oceanLevel*3.5f;    // No clue where this scaling came from, just my brute force fit for 138 maxheight
-    // ocean.transform.localScale = new Vector3(scale, scale, scale);
+    // Place ocean (if light world)
+    GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+    ocean.transform.parent = worldObjectsContainer;
+    float scale = activeWorld.oceanLevel*3.5f;    // No clue where this scaling came from, just my brute force fit for 138 maxheight
+    ocean.transform.localScale = new Vector3(scale, scale, scale);
   }
 
   // deprecated

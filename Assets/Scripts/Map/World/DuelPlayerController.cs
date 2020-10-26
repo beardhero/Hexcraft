@@ -20,7 +20,7 @@ public class DuelPlayerController : MonoBehaviour {
 	public int spawnTile = 0;
 	public int onTile;
 	public bool cast;
-	public RuneHex runeHex;
+	//public RuneHex runeHex;
 	// Use this for initialization
 	void Start () {
 		actor = GetComponent<Actor>();
@@ -42,8 +42,8 @@ public class DuelPlayerController : MonoBehaviour {
         //runehex test
         byte[] testID = new byte[32] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
         List<int> testCast = aW.GetTilesInRadius(1, onTile);
-        runeHex = new Rune(testID).runeHex;
-		runeHex.Initialize(testCast);
+        //runeHex = new Rune(testID).runeHex;
+		//runeHex.Initialize(testCast);
 		//move = false;
 		//cast = true;
 	}
@@ -70,7 +70,7 @@ public class DuelPlayerController : MonoBehaviour {
         		Debug.Log("casted");
         		int to = wM.GetHitTile(hit);
 				Debug.Log("hit tile: " + to);
-				StartCoroutine(runeHex.Cast(to));
+				//StartCoroutine(runeHex.Cast(to));
      		}
     	}
 	}

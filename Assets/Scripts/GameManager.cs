@@ -113,6 +113,7 @@ public class GameManager : MonoBehaviour
     // Serialize Vertex Data to JSON, for clients to use in building geometry
     JsonSerializer serializer = new JsonSerializer();
     //serializer.Formatting = Formatting.Indented;  // indentation increases file size by 200%
+    serializer.FloatParseHandling = FloatParseHandling.Decimal;
     
     using (StreamWriter sw = new StreamWriter(Application.dataPath+"\\Resources\\baseworld.json"))   // Note DO NOT use any encoding options
     using (JsonWriter writer = new JsonTextWriter(sw))
@@ -136,10 +137,10 @@ public class GameManager : MonoBehaviour
 
   }
 
-  public static void IniitalizeServerWorld(List<ServerTile> tiles){
+  public static void InitalizeServerWorld(ServerWorld world){
     worldManagerObj = GameObject.FindWithTag("World Manager");
     worldManager = worldManagerObj.GetComponent<WorldManager>();
-    worldManager.InitializeServerWorld(instance.blockPrefab, tiles);
+    worldManager.InitializeServerWorld(instance.blockPrefab, world);
   }
   void InitializeWorld(bool loading)
   {

@@ -42,16 +42,15 @@ public class BlockManager : MonoBehaviour
 
     public void CreateBlocks(){
         foreach (HexTile ht in WorldManager.activeWorld.tiles)
-        {            
+        {
             // Iterate from 0 (bedrock) up to heightmap[ht.index] (top layer)
-            int top = WorldManager.activeWorld.heightmap[ht.index];
-            if (top<0){
-                Debug.LogError("heightmap got negative value: "+top);
-                top = 1;
+            if (ht.height<0){
+                Debug.LogError("heightmap got negative value: "+ht.height);
+                ht.height = 1;
             }
-            for (int i = 0; i < top; i++)
+            for (int i = 0; i < ht.height; i++)
             {
-                HexBlock blok = CreateBlock(ht.index, ht.type, i, false, i >= top-1);
+                HexBlock blok = CreateBlock(ht.index, ht.type, i, false, i >= ht.height-1);
 
                 // Or set by height
                 // if (i==0)

@@ -75,7 +75,7 @@ public struct IntCoord
     return new IntCoord(0,0);
   }
 
-  public string Print()
+  public string ToString()
   {
     return x+"'"+y;
   }

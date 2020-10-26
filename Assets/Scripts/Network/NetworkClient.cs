@@ -9,6 +9,7 @@ using Firebase.Functions;
 
 public class NetworkClient : MonoBehaviour
 {
+    public bool runOfflineWithEmulation;
     public static FirebaseApp firebase;
     public static FirebaseFunctions functions;
     bool firebaseInitialized;
@@ -17,7 +18,6 @@ public class NetworkClient : MonoBehaviour
     public void Initialize(){StartCoroutine(_Initialize());}
     IEnumerator _Initialize()
     {
-        Debug.Log("iniitalizing network client");
         InitializeFirebase();
         while (!firebaseInitialized)
             yield return null;
@@ -66,7 +66,6 @@ public class NetworkClient : MonoBehaviour
 
     void FinishInitialization()
     {
-        Debug.Log("firebase components initialized");
         firebase = FirebaseApp.DefaultInstance;
         functions = FirebaseFunctions.DefaultInstance;
 
@@ -74,7 +73,10 @@ public class NetworkClient : MonoBehaviour
         Config.worldHeight = (int)FirebaseRemoteConfig.GetValue("worldHeight").LongValue;
 
         // @TODO: change from using emulator to using server
-        FirebaseFunctions.DefaultInstance.UseFunctionsEmulator("http://localhost:5001");    // /hexworld-293023/us-central1
+        if (runOfflineWithEmulation)
+            FirebaseFunctions.DefaultInstance.UseFunctionsEmulator("http://localhost:5001");    // /hexworld-293023/us-central1
+
+        Debug.Log("Network client initialized");
     }
 
     async void JoinFirstAvailableWorld()
@@ -90,7 +92,7 @@ public class NetworkClient : MonoBehaviour
             return;
         }
 
-        List<ServerTile> tiles = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ServerTile>>((string)res.Data);
-        GameManager.IniitalizeServerWorld(tiles);
+        ServerWorld world = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerWorld>((string)res.Data);
+        GameManager.InitalizeServerWorld(world);
     }
 }
