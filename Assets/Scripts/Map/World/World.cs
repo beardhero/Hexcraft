@@ -23,6 +23,7 @@ public class World
 
   public float avgHeight;
   public float oceanLevel;
+  public float maxHeight;
   public float glyphProb = 0.006f; //distribution of glyphs
   public float populationProb = 0;//.42f;
   public int maxObjects = 2400;
@@ -93,18 +94,18 @@ public class World
     tiles = new List<HexTile>();
 
     if (baseworld.hexTiles.Count != serverWorld.tiles.Count)
-      Debug.LogError("Count mismatch between baseworld and server world");
+      Debug.LogError("Count mismatch between baseworld and server world: "+baseworld.hexTiles.Count+" vs. "+serverWorld.tiles.Count);
 
     // Hard copy tile data
     for(int i=0; i<serverWorld.tiles.Count; i++)
     {
       HexTile ht = new HexTile();
       ht.index = i;
-      ht.height = serverWorld.tiles[i].height;
+      ht.height = serverWorld.tiles[i].h;
 
       Hexagon h = new Hexagon();    // We don't use the previous hexagon builder constructor because we don't need to do normal calculation
       h.index = i;
-      h.center = serverWorld.tiles[i].center;   // Functionally, local and server center should be the same
+      h.center = baseworld.hexTiles[i].hexagon.center;
       h.normal = baseworld.hexTiles[i].hexagon.normal;
       h.v1 = baseworld.hexTiles[i].hexagon.v1;
       h.v2 = baseworld.hexTiles[i].hexagon.v2;
@@ -114,16 +115,19 @@ public class World
       h.v6 = baseworld.hexTiles[i].hexagon.v6;
       // @TODO: is hexagon.uv's used at all? seems like it once was but not any more
       //h.neighbors = baseworld.hexTiles[i].neighbors.ToArray<int>();   // hexagon neighbors also deprecated?
-      h.isPentagon = serverWorld.tiles[i].isPentagon;   // Either copy could be used
+      h.isPentagon = baseworld.hexTiles[i].hexagon.isPentagon;  
       // Not setting hexagon scale because I'm not sure how it's used (is it supposed to be a Scale() method?)
       ht.hexagon = h;
 
-      ht.type = serverWorld.tiles[i].type;
+      ht.type = serverWorld.tiles[i].t;
       ht.neighbors = baseworld.hexTiles[i].neighbors;   // Should go either way
-      ht.passable = serverWorld.tiles[i].passable;
+      ht.passable = serverWorld.tiles[i].p;
       ht.plate = baseworld.hexTiles[i].plate;
       tiles.Add(ht);
     }
+
+    oceanLevel = serverWorld.oceanLevel;
+    maxHeight = serverWorld.maxHeight;
   }
 
   // deprecated
@@ -193,7 +197,7 @@ public class World
 
       // Then set a starting biome on a tile and "fill" by checking each of it's neighbors.
       //  If it's gray then add it's neighbors to a list of tiles to check again next round
-      TileType currentType = TileType.Water;
+      TileType currentType = TileType.Dark;
       int maxBiomeSize = Random.Range(75,88);
       int minBiomeSize = 75;
       biomes = new List<Biome>();
@@ -221,8 +225,8 @@ public class World
         currentBiome = new Biome();
         currentBiome.index = biomes.Count;
         currentType++;
-        if (currentType > TileType.Light)
-          currentType = TileType.Water;  // If we've reached the end of the type list, start again from Water @TODO: create a list of types to use rather than using all
+        if (currentType > TileType.Fire)
+          currentType = TileType.Dark;  // If we've reached the end of the type list, start again from Water @TODO: create a list of types to use rather than using all
 
         currentBiome.type = currentType;    // It's important to split this up so we don't increment current biome's type
 
@@ -694,7 +698,7 @@ public List<int> GetTilesInRadius(float radius, int origin)
       if(ht.type == TileType.Astral){ht.type = TileType.Arbor;}
       if(ht.type == TileType.Air){ht.type = TileType.Earth;}
       if(ht.type == TileType.Crystal){ht.type = TileType.Vapor;}
-      if(ht.type == TileType.Sol){ht.type = TileType.Luna;}
+      if(ht.type == TileType.Solar){ht.type = TileType.Lunar;}
     }
   }
   public void DarkToLight()
@@ -707,7 +711,7 @@ public List<int> GetTilesInRadius(float radius, int origin)
       if(ht.type == TileType.Arbor){ht.type = TileType.Astral;}
       if(ht.type == TileType.Earth){ht.type = TileType.Air;}
       if(ht.type == TileType.Vapor){ht.type = TileType.Crystal;}
-      if(ht.type == TileType.Luna){ht.type = TileType.Sol;}
+      if(ht.type == TileType.Lunar){ht.type = TileType.Solar;}
      }
   }   
 }

@@ -82,14 +82,6 @@ public class WorldManager : MonoBehaviour
   public int eleSpawnMax = 360;
   public bool activeElementals = true;
   Object[] elementals;
-    /*
-  Object[] AirElementals;
-  Object[] EarthElementals;
-  Object[] WaterElementals;
-  Object[] FireElementals;
-  Object[] LightElementals;
-  Object[] DarkElementals;
-  */
   List<GameObject> livingElementals;
   List<IEnumerator> eleCoroutines;
   GameObject newAnt;
@@ -109,7 +101,6 @@ public class WorldManager : MonoBehaviour
     
     // Load the baseworld and apply servertiles data to it
     PolySphere baseWorld = JsonConvert.DeserializeObject<PolySphere>(Resources.Load<TextAsset>("baseworld").text);
-    Debug.Log("Loading world "+serverWorld.name+" from server");
     activeWorld = new World(baseWorld, serverWorld);
 
     //render plates
@@ -123,8 +114,9 @@ public class WorldManager : MonoBehaviour
 
     // Place ocean (if light world)
     GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
-    ocean.transform.parent = worldObjectsContainer;
-    float scale = activeWorld.oceanLevel*3.5f;    // No clue where this scaling came from, just my brute force fit for 138 maxheight
+    ocean.transform.parent = currentWorldTrans;
+    ocean.transform.SetAsFirstSibling();
+    float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
     ocean.transform.localScale = new Vector3(scale, scale, scale);
   }
 

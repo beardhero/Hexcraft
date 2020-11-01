@@ -4,12 +4,11 @@ using System.Collections;
 using Random = UnityEngine.Random;
 
 [Serializable]
-public enum TileType {
-  None, Gray,
-  Water, Fire, Earth, Air, Dark, Light,
-  Metal, Ice, Vapor, Crystal, Arbor, Astral, 
-  Luna, Sol, Void, Divine,
-  Cloud
+public enum TileType {    // Note that this order must match the definition in HexServer/world.js
+  None, Gray, Lunar, Solar,
+  Water, Air, Earth, Fire,
+  Vapor, Ice, Metal, Crystal, Arbor, Astral, 
+  Dark, Light, Void, Divine
 };
 
 [Serializable]

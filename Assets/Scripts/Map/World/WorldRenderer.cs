@@ -23,15 +23,6 @@ public class WorldRenderer : MonoBehaviour
   public List<GameObject> HexPlates(World world, TileSet tileSet)
   {
     List<GameObject> output = new List<GameObject>();
-    //Populate polysphere.hPlates based on hextile plate index
-    //First find number of plates
-    /*
-    hPlates = new List<List<HexTile>>();
-    for (int i = 0; i <= world.numberOfPlates; i++)
-    {
-      hPlates.Add(new List<HexTile>());
-    }
-    */
     
 
     //Create a mesh for each plate and put it in the list of outputs
@@ -73,8 +64,17 @@ public class WorldRenderer : MonoBehaviour
 			uv5 = new Vector2 (384f/texWidth, 0);   // Lower right
 			uv6 = new Vector2 (128f/texWidth, 0);   // Lower left
       
-      Vector2 darkBorder = new Vector2(.9f,.5f);  // A black point off the map
+      int[] darkTex = {13,0};   // Coordinates in the atlas
+      Vector2 darkBorder = new Vector2(darkTex[0]*uvTileWidth, darkTex[1]*uvTileHeight);  // A black point off the map
+
+      // Origin point, every tile unfortunately repeats origin (@TODO and one vertex) for uv purposes
+      int originIndex = vertices.Count;
+      vertices.Add(origin);
+      uvs.Add(darkBorder+uv0);
+      normals.Add(Vector2.zero);
       
+      float worldScale = 1 / 16.0f;    // Estimated radius of the world is 16 blocks
+
       foreach (HexTile ht in world.tiles)
 			{
 				if (ht.plate == i)
@@ -82,17 +82,11 @@ public class WorldRenderer : MonoBehaviour
           IntCoord uvCoord = WorldManager.instance.regularTileSet.GetUVForType(ht.type);
           Vector2 uvOffset = new Vector2(uvCoord.x * uvTileWidth, uvCoord.y * uvTileHeight);
 					
-          float height = 10+ht.height;
-
-					// Origin point, every tile unfortunately repeats origin (@TODO and one vertex) for uv purposes
-					int originIndex = vertices.Count;
-					vertices.Add(origin*height);
-					uvs.Add(darkBorder);
-					normals.Add(ht.hexagon.center - origin);
+          float height = 1 + (ht.height * worldScale);
 
 					// Center of hexagon
 					int centerIndex = vertices.Count;
-					ht.hexagon.uv0i = uvs.Count; 
+					ht.hexagon.uv0i = uvs.Count;  // Are these used for tile type switching?)
 					// Triangle 1
 					vertices.Add(ht.hexagon.center*height);
 					normals.Add((origin + ht.hexagon.center));
@@ -115,7 +109,7 @@ public class WorldRenderer : MonoBehaviour
 					triangles.Add(vertices.Count - 1);
 
 					// T2
-					ht.hexagon.uv3i = uvs.Count;
+				  ht.hexagon.uv3i = uvs.Count;
 					vertices.Add(ht.hexagon.v3*height);
 					normals.Add((origin + ht.hexagon.v3));
 					uvs.Add(uv3 + uvOffset);
@@ -159,36 +153,60 @@ public class WorldRenderer : MonoBehaviour
 					triangles.Add(vertices.Count - 1);   //1
 					triangles.Add(vertices.Count - 6);   //6
 
-          // For each side add two vertices 
+          // Add six vertices with new UVs
+          vertices.Add(ht.hexagon.v1*height);
+          normals.Add(ht.hexagon.sideNormal1);
+          uvs.Add(darkBorder+uv1);
+
+          vertices.Add(ht.hexagon.v2*height);
+          normals.Add(ht.hexagon.sideNormal2);
+          uvs.Add(darkBorder+uv2);
+
+          vertices.Add(ht.hexagon.v3*height);
+          normals.Add(ht.hexagon.sideNormal3);
+          uvs.Add(darkBorder+uv3);
+
+          vertices.Add(ht.hexagon.v4*height);
+          normals.Add(ht.hexagon.sideNormal4);
+          uvs.Add(darkBorder+uv4);
+
+          vertices.Add(ht.hexagon.v5*height);
+          normals.Add(ht.hexagon.sideNormal5);
+          uvs.Add(darkBorder+uv5);
+
+          vertices.Add(ht.hexagon.v6*height);
+          normals.Add(ht.hexagon.sideNormal6);
+          uvs.Add(darkBorder+uv6);
+
 					// Side 1
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 1);
-					// triangles.Add(vertices.Count - 2);
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 1);
+					triangles.Add(vertices.Count - 2);
 
-					// // Side 2
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 2);
-					// triangles.Add(vertices.Count - 3);
+					// Side 2
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 2);
+					triangles.Add(vertices.Count - 3);
 
-					// // Side 3
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 3);
-					// triangles.Add(vertices.Count - 4);
+					// Side 3
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 3);
+					triangles.Add(vertices.Count - 4);
 
-					// // Side 4
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 4);
-					// triangles.Add(vertices.Count - 5);
+					// Side 4
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 4);
+					triangles.Add(vertices.Count - 5);
 
-					// // Side 5
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 5);
-					// triangles.Add(vertices.Count - 6);
+					// Side 5
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 5);
+					triangles.Add(vertices.Count - 6);
           
-					// // Side 6 extra vertex
-					// triangles.Add(originIndex);
-					// triangles.Add(vertices.Count - 6);
-					// triangles.Add(vertices.Count - 1);
+					// Side 6 extra vertex
+					triangles.Add(originIndex);
+					triangles.Add(vertices.Count - 6);
+					triangles.Add(vertices.Count - 1);
           
 				}
 			}
@@ -196,120 +214,119 @@ public class WorldRenderer : MonoBehaviour
     else //Triangle, assumed that the texture's tiles have equilateral triangle dimensions
     {
       Debug.Log("triangle uvs"); 
-      float uv2x = 1.0f / tileCountW;
-      float uv1x = uv2x / 2;
-      float uv1y = 1.0f / tileCountH;
-      Vector2 uv0 = Vector2.zero,
-              uv2 = new Vector2(uv2x, 0),
-              uv1 = new Vector2(uv1x, uv1y);
-      //Generate quadrant
-      foreach (HexTile ht in world.tiles)
-      {
-        if (ht.plate == i)
-        {
-          IntCoord uvCoord = tileSet.GetUVForType(ht.type);
-          //Debug.Log("xCoord: "+ uvCoord.x + "  type: "+ ht.type);
-          Vector2 uvOffset = new Vector2((uvCoord.x * uv2.x), (uvCoord.y * uv1.y));
+      // float uv2x = 1.0f / tileCountW;
+      // float uv1x = uv2x / 2;
+      // float uv1y = 1.0f / tileCountH;
+      // Vector2 uv0 = Vector2.zero,
+      //         uv2 = new Vector2(uv2x, 0),
+      //         uv1 = new Vector2(uv1x, uv1y);
+      // //Generate quadrant
+      // foreach (HexTile ht in world.tiles)
+      // {
+      //   if (ht.plate == i)
+      //   {
+      //     IntCoord uvCoord = tileSet.GetUVForType(ht.type);
+      //     //Debug.Log("xCoord: "+ uvCoord.x + "  type: "+ ht.type);
+      //     Vector2 uvOffset = new Vector2((uvCoord.x * uv2.x), (uvCoord.y * uv1.y));
 
-          // Origin point
-          int originIndex = vertices.Count;
-          vertices.Add(origin);
-          uvs.Add(uv1 + uvOffset);
-          normals.Add(ht.hexagon.center - origin);
+      //     // Origin point
+      //     int originIndex = vertices.Count;
+      //     vertices.Add(origin);
+      //     uvs.Add(uv1 + uvOffset);
+      //     normals.Add(ht.hexagon.center - origin);
 
-          // Center of hexagon
-          int centerIndex = vertices.Count;
+      //     // Center of hexagon
+      //     int centerIndex = vertices.Count;
 
-          // Triangle 1
-          vertices.Add(ht.hexagon.center);
-          normals.Add((origin + ht.hexagon.center));
-          uvs.Add(uv1 + uvOffset);
+      //     // Triangle 1
+      //     vertices.Add(ht.hexagon.center);
+      //     normals.Add((origin + ht.hexagon.center));
+      //     uvs.Add(uv1 + uvOffset);
 
-          vertices.Add(ht.hexagon.v1);
-          normals.Add((origin + ht.hexagon.v1));
-          uvs.Add(uv0 + uvOffset);
+      //     vertices.Add(ht.hexagon.v1);
+      //     normals.Add((origin + ht.hexagon.v1));
+      //     uvs.Add(uv0 + uvOffset);
 
-          vertices.Add(ht.hexagon.v2);
-          normals.Add((origin + ht.hexagon.v2));
-          uvs.Add(uv2 + uvOffset);
+      //     vertices.Add(ht.hexagon.v2);
+      //     normals.Add((origin + ht.hexagon.v2));
+      //     uvs.Add(uv2 + uvOffset);
 
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 1);
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 1);
 
-          // T2
-          vertices.Add(ht.hexagon.v3);
-          normals.Add((origin + ht.hexagon.v3));
-          uvs.Add(uv0 + uvOffset);
+      //     // T2
+      //     vertices.Add(ht.hexagon.v3);
+      //     normals.Add((origin + ht.hexagon.v3));
+      //     uvs.Add(uv0 + uvOffset);
 
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 1);
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 1);
 
-          // T3
-          vertices.Add(ht.hexagon.v4);
-          normals.Add((origin + ht.hexagon.v4));
-          uvs.Add(uv2 + uvOffset);
+      //     // T3
+      //     vertices.Add(ht.hexagon.v4);
+      //     normals.Add((origin + ht.hexagon.v4));
+      //     uvs.Add(uv2 + uvOffset);
 
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 1);
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 1);
 
-          // T4
-          vertices.Add(ht.hexagon.v5);
-          normals.Add((origin + ht.hexagon.v5));
-          uvs.Add(uv0 + uvOffset);
+      //     // T4
+      //     vertices.Add(ht.hexagon.v5);
+      //     normals.Add((origin + ht.hexagon.v5));
+      //     uvs.Add(uv0 + uvOffset);
 
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 1);
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 1);
 
-          // T5
-          vertices.Add(ht.hexagon.v6);
-          normals.Add((origin + ht.hexagon.v6));
-          uvs.Add(uv2 + uvOffset);
+      //     // T5
+      //     vertices.Add(ht.hexagon.v6);
+      //     normals.Add((origin + ht.hexagon.v6));
+      //     uvs.Add(uv2 + uvOffset);
 
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 1);
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 1);
 
-          // T6
-          triangles.Add(centerIndex);
-          triangles.Add(vertices.Count - 1);
-          triangles.Add(vertices.Count - 6);
+      //     // T6
+      //     triangles.Add(centerIndex);
+      //     triangles.Add(vertices.Count - 1);
+      //     triangles.Add(vertices.Count - 6);
 
+      //     // Side 1
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 1);
+      //     triangles.Add(vertices.Count - 2);
 
-          // Side 1
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 1);
-          triangles.Add(vertices.Count - 2);
+      //     // Side 2
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 2);
+      //     triangles.Add(vertices.Count - 3);
 
-          // Side 2
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 2);
-          triangles.Add(vertices.Count - 3);
+      //     // Side 3
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 3);
+      //     triangles.Add(vertices.Count - 4);
 
-          // Side 3
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 3);
-          triangles.Add(vertices.Count - 4);
+      //     // Side 4
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 4);
+      //     triangles.Add(vertices.Count - 5);
 
-          // Side 4
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 4);
-          triangles.Add(vertices.Count - 5);
+      //     // Side 5
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 5);
+      //     triangles.Add(vertices.Count - 6);
 
-          // Side 5
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 5);
-          triangles.Add(vertices.Count - 6);
-
-          // Side 6
-          triangles.Add(originIndex);
-          triangles.Add(vertices.Count - 6);
-          triangles.Add(vertices.Count - 1);
-        }
-      }
+      //     // Side 6
+      //     triangles.Add(originIndex);
+      //     triangles.Add(vertices.Count - 6);
+      //     triangles.Add(vertices.Count - 1);
+      //   }
+      // }
     }
     //Debug.Log(uv1);
     //Debug.Log(uv2);

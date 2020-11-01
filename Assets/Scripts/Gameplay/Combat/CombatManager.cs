@@ -9,7 +9,7 @@ public class CombatManager : MonoBehaviour
   public static CombatManager instance;
   List<Commander> commanders;
   List<Skirmish> skirmishes;
-  int combatThresholdDistance = 10;   // Ten tiles
+  //int combatThresholdDistance = 10;   // Ten tiles
 
   public void Initialize(World w)
   {

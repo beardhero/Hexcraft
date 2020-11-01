@@ -3,8 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
-using System.IO;
-using Newtonsoft.Json;
 
 public enum RelativityState {None, CacheBaseworld, Lobby, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
@@ -21,6 +19,7 @@ public class GameManager : MonoBehaviour
   public static RelativityState State {get{return state;} set{}}
   public static Camera cam;
   public static MainUI mainUI;
+  public static NetworkClient networkClient;
 
   //For World
   public static World currentWorld;
@@ -44,7 +43,7 @@ public class GameManager : MonoBehaviour
 
     private void Start() {
       instance = this;
-            Init();
+      Init();
     }
 
     // *** Main Initializer ***
@@ -54,7 +53,10 @@ public class GameManager : MonoBehaviour
 
         // @TODO: Make these a singleton pattern
         //currentZone = new Zone(1); // Required so Hex doesn't null ref currentZone
-        Hex.Initialize();
+        Hex.Initialize();   // @TODO: examine current necessity
+
+        mainUI = GameObject.FindWithTag("MainUI").GetComponent<MainUI>();
+        networkClient = GetComponent<NetworkClient>();
 
         // Ideally, the only place state is manually set.
         state = beginningState;
@@ -63,7 +65,11 @@ public class GameManager : MonoBehaviour
         {
           // Note: all but first two states have been deprecated
           case RelativityState.Lobby:
-            // @TODO: render some kind of character lobby or homeworld to show before going online.
+            // @TODO: render some kind of character lobby or homeworld to show before joining match.
+            networkClient.Initialize(() => {
+              mainUI.Initialize();
+              mainUI.OnClickedRefresh();  // Call after networkClient is finished initializing
+            });
           break;
 
           case RelativityState.CacheBaseworld:
@@ -111,30 +117,15 @@ public class GameManager : MonoBehaviour
     PolySphere sphere = new PolySphere(Vector3.zero, WorldManager.worldScale, WorldManager.worldSubdivisions);
 
     // Serialize Vertex Data to JSON, for clients to use in building geometry
-    JsonSerializer serializer = new JsonSerializer();
-    //serializer.Formatting = Formatting.Indented;  // indentation increases file size by 200%
-    serializer.FloatParseHandling = FloatParseHandling.Decimal;
-    
-    using (StreamWriter sw = new StreamWriter(Application.dataPath+"\\Resources\\baseworld.json"))   // Note DO NOT use any encoding options
-    using (JsonWriter writer = new JsonTextWriter(sw))
-    {
-        serializer.Serialize(writer, sphere);
-    }
+    JSONSerializer.WriteTextFile(sphere, "\\Resources\\baseworld.json");
 
     // Serialize index and neighbor data, as well as hexagon center, for server to use in generating worlds
-    List<ServerTile> tiles = new List<ServerTile>();
+    List<CacheTile> tiles = new List<CacheTile>();
     foreach (HexTile ht in sphere.hexTiles){
-      tiles.Add(new ServerTile(ht));  // copy constructor
+      tiles.Add(new CacheTile(ht));  // copy constructor
     }
 
-    using (StreamWriter sw = new StreamWriter(Application.dataPath+"\\Cache\\tilemap.json"))
-    using (JsonWriter writer = new JsonTextWriter(sw))
-    {
-        serializer.Serialize(writer, tiles);
-    }
-
-    
-
+    JSONSerializer.WriteTextFile(tiles, "\\Cache\\tilemap.json");
   }
 
   public static void InitalizeServerWorld(ServerWorld world){

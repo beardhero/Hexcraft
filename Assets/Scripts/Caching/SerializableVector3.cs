@@ -48,6 +48,13 @@
       y /= magnitude;
       z /= magnitude;
     }
+
+    [Newtonsoft.Json.JsonIgnore] public SerializableVector3 normalized {get{
+      x /= magnitude;
+      y /= magnitude;
+      z /= magnitude;
+      return this;
+    } set{}}
      
      
 

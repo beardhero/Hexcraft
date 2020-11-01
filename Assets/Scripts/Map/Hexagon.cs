@@ -7,7 +7,8 @@ using System;
 public class Hexagon
 {
   public int index;    // Doesn't need serialized as the index is identical to its containing HexTile
-  [DataMember] public SerializableVector3 center, normal, v1, v2, v3, v4, v5, v6;
+  [DataMember] public SerializableVector3 center, normal, v1, v2, v3, v4, v5, v6,
+    sideNormal1, sideNormal2, sideNormal3, sideNormal4, sideNormal5, sideNormal6;   // These are normals for the six sides of the hexagon
   public int uv0i, uv1i, uv2i, uv3i, uv4i, uv5i, uv6i;   // These are also 0's
   public int[] neighbors; // not used?? always is -1
   [DataMember] public bool isPentagon;
@@ -46,8 +47,16 @@ public class Hexagon
     v6 = verts[5];
     _scale = center.magnitude;
     normal = ((Vector3)(center - origin)).normalized;
+    sideNormal1 = (v1 - center).normalized;
+    sideNormal2 = (v2 - center).normalized;
+    sideNormal3 = (v3 - center).normalized;
+    sideNormal4 = (v4 - center).normalized;
+    sideNormal5 = (v5 - center).normalized;
+    sideNormal6 = (v6 - center).normalized;
+
     foreach (Vector3 v in PolySphere.icoCoords)
     {
+      // @TODO: There must be a more efficient way to do this than checking every hexagon
       if (center == v)
       {
         isPentagon = true;
