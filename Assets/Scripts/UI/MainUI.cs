@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 
 public class MainUI : MonoBehaviour
 {
+  public RectTransform lobbyPanel, chatPanel, loginPanel;
   public GameObject matchPrefab, backButton, notSignedInGroup, newUserGroup, infoGroup, signedInGroup, incorrectLoginGroup;
   public Button refreshButton, resendEmailButton;
   public Text checkEmailInfo, signedInInfo;
@@ -16,8 +17,11 @@ public class MainUI : MonoBehaviour
   NetworkClient network;
   EventSystem eventSystem;
   bool lockConnection, lockRefresh;
+  static MainUI instance;
+  Vector3 lobbyPanelStartPos;
   public void Initialize()
   {
+    instance = this;
     network = GameManager.networkClient;
     eventSystem = EventSystem.current;
 
@@ -27,6 +31,30 @@ public class MainUI : MonoBehaviour
     else{
       SignedInWindow();
     }
+    lobbyPanelStartPos = lobbyPanel.localPosition;
+    HideChat();
+  }
+
+  void HideChat(){
+    LeanTween.move( chatPanel, new Vector3(0,-71,0), .5f)
+      .setEase( LeanTweenType.easeInQuad ).setDelay(.2f).setOnComplete(()=>{
+        chatPanel.gameObject.SetActive(false);
+    });
+  }
+
+  public void OnLeaveLobby(){
+    LeanTween.move( lobbyPanel, new Vector3(-133,-262,0), .5f)
+     .setEase( LeanTweenType.easeInQuad ).setDelay(.2f).setOnComplete(()=>{
+      lobbyPanel.gameObject.SetActive(false);
+    });
+    HideLogin();
+  }
+
+  void HideLogin(){
+    LeanTween.move( loginPanel, new Vector3(117,-132,0), .5f)
+     .setEase( LeanTweenType.easeInQuad ).setDelay(.2f).setOnComplete(()=>{
+      loginPanel.gameObject.SetActive(false);
+    });
   }
 
   void Update()
@@ -45,11 +73,14 @@ public class MainUI : MonoBehaviour
       
     }
 
-    // Developer debug @TODO: remove!!!
+    // Developer debug @TODO: remove from production!!!
     if (Input.GetKey(KeyCode.RightAlt) && Input.GetKey(KeyCode.Alpha0)){
-      if (Input.GetKey(KeyCode.R)){
+      if (Input.GetKeyDown(KeyCode.R)){
         lockConnection = false;
+        Debug.Log("Reset connection for create new match.");
       }
+      else if (Input.GetKeyDown(KeyCode.G))
+        NetworkClient.TestGenerateWorld();
     }
   }
 
@@ -59,9 +90,12 @@ public class MainUI : MonoBehaviour
     backButton.SetActive(true);
     notSignedInGroup.SetActive(false);
   }
-  void MainLogin(){
+  public void MainLogin(){
     if (!NetworkClient.IsLoggedIn) notSignedInGroup.SetActive(true);    // show login
-    else SignedInWindow();  // show user info
+    else {
+      SignedInWindow();  // show user info
+      notSignedInGroup.SetActive(false);
+    }
     backButton.SetActive(false);  // return to toplevel menu
   }
   void SignedInWindow(){
@@ -71,6 +105,9 @@ public class MainUI : MonoBehaviour
       resendEmailButton.gameObject.SetActive(true);
     }
     else{
+      signedInInfo.text = "Signed in as "+NetworkClient.user.DisplayName+"\n\nDebug Codes (right-alt + 0)"
+        +"\n+r *reset new match request"
+        +"\n+g *Test world gen without matchmaking";
       resendEmailButton.gameObject.SetActive(false);
     }
   }
@@ -171,8 +208,10 @@ public class MainUI : MonoBehaviour
   }
   void OnClickedNewMatch(string s)  // listener added action
   {
-    if (lockConnection)
+    if (lockConnection){
+      Debug.LogError("Reset match request before asking the server again for a match");
       return;
+    }
 
     lockConnection = true;
     network.StartNewMatch(s);
@@ -194,11 +233,11 @@ public class MainUI : MonoBehaviour
       g.transform.localPosition = Vector3.up * i * -30;
       g.transform.SetAsFirstSibling();
       g.transform.Find("Name").GetComponent<Text>().text = matches[i].name;
-      g.transform.Find("Type").GetComponent<Text>().text = "Type: "+matches[i].type;
-      g.transform.Find("Players").GetComponent<Text>().text = matches[i].players+"/6";
-      string id = matches[i].id;  // This must be accessed and evaluated now, not in the lambda exp.
+      //g.transform.Find("Type").GetComponent<Text>().text = "Type: "+matches[i].type;
+      g.transform.Find("Players").GetComponent<Text>().text = matches[i].players.Length+"/6";
+      Match m = matches[i];  // This must be accessed and evaluated now, not in the lambda exp.
       g.transform.Find("Join Button").GetComponent<Button>().onClick.AddListener( ()=>{
-        network.JoinMatch(id);
+        network.OnJoinMatch(in m);
         // @TODO: deselect, close menu
       });
     }

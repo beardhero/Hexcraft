@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Collections;
 
 [System.Serializable]
-public class TileSet
+public struct TileSet
 {
   public Texture2D texture;
   public int tileWidth;
   public int tileHeight;
   public TypeMap[] typeUVs;
 
-  bool initialized = false;
+  bool initialized;
 
   TypeMap[] _typeUVs;
   
@@ -53,6 +53,20 @@ public class TileSet
     coord.y = UnityEngine.Random.Range(_typeUVs[(int)t].minCoord.y, _typeUVs[(int)t].maxCoord.y + 1);
     //return _typeUVs[(int)t].coord;
     return coord;
+  }
+
+  public int[] GetUVsFlattened(){
+    if (!initialized)
+      Initialize();
+      
+    int count = Enum.GetNames(typeof(TileType)).Length;
+    int[] output = new int[count*2];
+    for (int i=0; i<count; i++){
+      if (_typeUVs[i]==null) continue;
+      output[i] =  _typeUVs[i].minCoord.x;
+      output[count+i] = _typeUVs[i].minCoord.y;
+    }
+    return output;
   }
 
   [System.Serializable]

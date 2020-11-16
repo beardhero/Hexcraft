@@ -9,6 +9,7 @@ using Firebase.RemoteConfig;
 using Firebase.Functions;
 using Firebase.Firestore;
 using Firebase.Auth;
+using Newtonsoft.Json;
 
 public class NetworkClient : MonoBehaviour
 {
@@ -19,9 +20,19 @@ public class NetworkClient : MonoBehaviour
     public static FirebaseFunctions functions;
     public static FirebaseFirestore db;
     public static FirebaseAuth auth;
+    public static MainUI mainUI;
+    public static MatchManager matchManager;
     bool firebaseInitialized;
+    List<ListenerRegistration> matchListeners;
     
     // Initialize() is at bottom of file
+
+    // ===== Round ======
+    public void ReadyToStartMatch(){  // Finally everything is ready
+        matchManager.DoStartMatch();
+        // set readyCheck flag
+        return;
+    }
 
     // ===== Lobby =====
     public async Task<List<Match>> GetMatchList()
@@ -33,42 +44,80 @@ public class NetworkClient : MonoBehaviour
 
         foreach (DocumentSnapshot doc in snapSht.Documents)
         {
-            Dictionary<string, object> dic = doc.ToDictionary();
-            matches.Add(new Match(doc.Id, dic));
+            //Dictionary<string, object> dic = doc.ToDictionary();
+            matches.Add(doc.ConvertTo<Match>());
         }
 
         return matches;
     }
 
-    public void JoinMatch(in string id)
+    public void OnJoinMatch (in Match match){ JoinMatch(match); }
+    async void JoinMatch(Match match)
     {
-        Debug.Log("Joining match "+id);
+        Debug.Log("joining match: "+match.name+" with id "+match.id);
+        // First ask the server initialize us (give us inventory, place us on the world, etc.)
+        HttpsCallableResult res;
+        res = await functions.GetHttpsCallable("joinMatch").CallAsync(new string[]{match.id, match.worldID});
+        // @TODO: check res to make sure all is well
+
+        matchManager.Initialize(user.UserId, match, this);
+
+        matchListeners = new List<ListenerRegistration>();
+        // Listen to changes in this match
+        matchListeners.Add(db.Collection("matches").Document(match.id).Listen( snap => matchManager.OnMatchUpdated(snap) ));
+        
+        // Get initial Units collection
+        CollectionReference unitsCol = db.Collection("matches").Document(match.id).Collection("units");
+        // QuerySnapshot unitsSnap = await unitsCol.GetSnapshotAsync();
+        // matchManager.OnUnitsUpdated(unitsSnap); 
+
+        // Listen to changes in the Units collection in this match
+        matchListeners.Add(unitsCol.Listen(snap=>matchManager.OnUnitsUpdated(snap)));
+
+        GameManager.OnMatchJoin(match);
+    }
+
+    public void OnLeaveMatch()
+    {
+        foreach (ListenerRegistration l in matchListeners)
+            l.Stop();
     }
 
     public async void StartNewMatch(string matchName)
     {
+        Debug.Log("asking server for a new match called "+matchName);
         HttpsCallableReference join = functions.GetHttpsCallable("startNewMatch");
         HttpsCallableResult res;
 
         try{
-            res = await join.CallAsync(matchName);
+            res = await join.CallAsync(matchName);  // This returns the Firestore ID of the match
         }
         catch (System.Exception error){
             Debug.LogError(error);
             return;
         }
 
-        ServerWorld world = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerWorld>((string)res.Data);
+        JoinMatch(JsonConvert.DeserializeObject<Match>((string)res.Data));
+    }
 
-        if (world.tiles == null)
-            Debug.LogError("bad data I guess");
-        else{
-            Debug.Log("Loading world "+world.name+" from server");
+    public static async void TestGenerateWorld(){
+        Debug.Log("Generating test world (no matchmaking).");
+        HttpsCallableReference generate = functions.GetHttpsCallable("testGenerateWorld");
+        HttpsCallableResult res = await generate.CallAsync("testWorld");
+        ServerWorld world = JsonConvert.DeserializeObject<ServerWorld>((string)res.Data);
+        // JSONSerializer.WriteTextFile(world, "\\Cache\\server_generatedWorld.json");  // If we want to see the output
+        GameManager.InitalizeServerWorld(world);
+    }
 
-            JSONSerializer.WriteTextFile(world, "\\Cache\\serverWorld.json");   // For testing server response data 
+    public static async Task<ServerWorld> GetWorldFromServerByID(string id){
+        DocumentSnapshot snap = await db.Collection("worlds").Document(id).GetSnapshotAsync();
 
-            GameManager.InitalizeServerWorld(world);
+        if (!snap.Exists){
+            Debug.LogError("Could not fetch world matching Match.worldID: "+id);
+            return null;
         }
+
+        return snap.ConvertTo<ServerWorld>();
     }
 
     // ===== User Account ====
@@ -141,6 +190,9 @@ public class NetworkClient : MonoBehaviour
     public void Initialize(Action callback = null){StartCoroutine(_Initialize(callback));}
     IEnumerator _Initialize(Action callback = null)
     {
+        mainUI = GameObject.FindWithTag("MainUI").GetComponent<MainUI>();
+        matchManager = GameObject.FindWithTag("GameController").GetComponent<MatchManager>();
+
         InitializeFirebase();
         while (!firebaseInitialized)
             yield return null;
@@ -172,9 +224,13 @@ public class NetworkClient : MonoBehaviour
       System.Threading.Tasks.Task.WhenAll(new Task[]{
         InitializeRemoteConfig()
       }).ContinueWith(task => {
+        // Firebase
         firebaseApp = FirebaseApp.DefaultInstance;
+        // Functions
         functions = FirebaseFunctions.DefaultInstance;
+        // Firestore
         db = FirebaseFirestore.DefaultInstance;
+        db.Settings.PersistenceEnabled = true;      // Offline cache
         auth = FirebaseAuth.GetAuth(firebaseApp);
         firebaseInitialized = true;
       });
@@ -218,7 +274,8 @@ public class NetworkClient : MonoBehaviour
             }
             user = auth.CurrentUser;
             if (signedIn) {
-                Debug.Log("Signed in " + user.UserId);
+                Debug.Log("Signed in " + user.DisplayName);
+                mainUI.MainLogin();     // Refresh the main login
                 // @TODO: enable game functions
                 // @TODO: set this.userData from firestore query
             }

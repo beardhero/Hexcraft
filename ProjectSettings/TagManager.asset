@@ -11,6 +11,7 @@ TagManager:
   - Network Controller
   - CombatManager
   - MainUI
+  - CameraController
   layers:
   - Default
   - TransparentFX

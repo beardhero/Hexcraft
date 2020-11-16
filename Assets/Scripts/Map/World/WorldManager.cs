@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 public enum HexDirection{R, P, L, S, B, F}; // right port left starboard back front
 
@@ -81,7 +83,7 @@ public class WorldManager : MonoBehaviour
   public int eleSpawnMin = 60;
   public int eleSpawnMax = 360;
   public bool activeElementals = true;
-  Object[] elementals;
+  UnityEngine.Object[] elementals;
   List<GameObject> livingElementals;
   List<IEnumerator> eleCoroutines;
   GameObject newAnt;
@@ -93,9 +95,8 @@ public class WorldManager : MonoBehaviour
   void Start(){
     instance = this;
   }
-  public void InitializeServerWorld(GameObject blockPrefab, ServerWorld serverWorld)
+  public IEnumerator InitializeServerWorld(GameObject blockPrefab, ServerWorld serverWorld, Action<World> callback=null)
   {
-    staticTileSet = regularTileSet;
     currentWorldObject = new GameObject("World");
     currentWorldTrans = currentWorldObject.transform;
     
@@ -105,11 +106,13 @@ public class WorldManager : MonoBehaviour
 
     //render plates
     worldRenderer = GetComponent<WorldRenderer>();
-    foreach (GameObject g in worldRenderer.HexPlates(activeWorld, regularTileSet))
+    CoroutineWithData cd = new CoroutineWithData(this, worldRenderer.ThreadedHexPlates(activeWorld, regularTileSet));
+    yield return cd.coroutine;
+    List<GameObject> plates = (List<GameObject>)cd.result;
+
+    foreach (GameObject g in plates)
     {
       g.transform.parent = currentWorldTrans;
-      //turned off hextile rendering
-      //g.SetActive(false); // why was this done?
     }
 
     // Place ocean (if light world)
@@ -118,6 +121,8 @@ public class WorldManager : MonoBehaviour
     ocean.transform.SetAsFirstSibling();
     float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
     ocean.transform.localScale = new Vector3(scale, scale, scale);
+
+    callback(activeWorld);
   }
 
   // deprecated
@@ -141,13 +146,13 @@ public class WorldManager : MonoBehaviour
       //activeWorld.Populate(seed);
 
       //place objects in biomes
-      Object[] airBiome = Resources.LoadAll("Air/");
-      Object[] earthBiome = Resources.LoadAll("Earth/");
-      Object[] waterBiome = Resources.LoadAll("Water/");
-      Object[] fireBiome = Resources.LoadAll("Fire/");
-      Object[] darkBiome = Resources.LoadAll("Dark/");
-      Object[] lightBiome = Resources.LoadAll("Light/");
-      Object[] misc = Resources.LoadAll("Misc/");
+      UnityEngine.Object[] airBiome = Resources.LoadAll("Air/");
+      UnityEngine.Object[] earthBiome = Resources.LoadAll("Earth/");
+      UnityEngine.Object[] waterBiome = Resources.LoadAll("Water/");
+      UnityEngine.Object[] fireBiome = Resources.LoadAll("Fire/");
+      UnityEngine.Object[] darkBiome = Resources.LoadAll("Dark/");
+      UnityEngine.Object[] lightBiome = Resources.LoadAll("Light/");
+      UnityEngine.Object[] misc = Resources.LoadAll("Misc/");
       Transform p = GameObject.Find("WorldObjects").transform;
       //p.parent = currentWorldTrans;
       /*
@@ -165,7 +170,7 @@ public class WorldManager : MonoBehaviour
       {
         if(ht.objectToPlace != -1)
         {
-          Object g = new Object();
+          UnityEngine.Object g = new UnityEngine.Object();
           Vector3 v =  ht.hexagon.center - activeWorld.origin;
           //ht.passable = false;
           switch(ht.type)
@@ -890,11 +895,11 @@ public class WorldManager : MonoBehaviour
   {
     while(go != null)
     {
-      Vector3 axis = Random.onUnitSphere;
+      Vector3 axis = UnityEngine.Random.onUnitSphere;
       float startTime = Time.time;
-      float end = Random.Range(.5f,1.5f);
+      float end = UnityEngine.Random.Range(.5f,1.5f);
       Quaternion g = go.transform.rotation;
-      Quaternion rotation = Random.rotation;
+      Quaternion rotation = UnityEngine.Random.rotation;
       while(Time.time < startTime + end && go != null)
       {
         go.transform.rotation = Quaternion.Lerp(g, rotation, (Time.time - startTime)/end);
@@ -923,12 +928,12 @@ public class WorldManager : MonoBehaviour
 
   public string RandomAnt()
   {
-    int length = Random.Range(3,7);
+    int length = UnityEngine.Random.Range(3,7);
     string[] ant = new string[length];
     string s = "";
     for(int i = 0; i < length; i++)
     {
-      switch(Random.Range(0,6))
+      switch(UnityEngine.Random.Range(0,6))
       {
         case 0: ant[i] = "R"; break;
         case 1: ant[i] = "L"; break;
@@ -1160,7 +1165,7 @@ public class WorldManager : MonoBehaviour
     {
       if(livingElementals.Count < maxElementals) 
       {
-        HexTile t = activeWorld.tiles[Random.Range(0,activeWorld.tiles.Count)];
+        HexTile t = activeWorld.tiles[UnityEngine.Random.Range(0,activeWorld.tiles.Count)];
         /* 
         while(t.type == TileType.Gray || t.passable == false)
         {
@@ -1169,13 +1174,13 @@ public class WorldManager : MonoBehaviour
         */
         if(t.type != TileType.Gray && t.passable == true)
         {
-          GameObject g = elementals[Random.Range(0,elementals.Length)] as GameObject;
+          GameObject g = elementals[UnityEngine.Random.Range(0,elementals.Length)] as GameObject;
           //Instantiate(g, Vector3.zero, Quaternion.identity);
           StartCoroutine(LangstonsElementals(RandomAnt(), g,t, activeWorld.tiles[t.neighbors[0]]));
           livingElementals.Add(g);
         }
       }   
-      yield return new WaitForSeconds(Random.Range(eleSpawnMin, eleSpawnMax));
+      yield return new WaitForSeconds(UnityEngine.Random.Range(eleSpawnMin, eleSpawnMax));
     }
   }
   public int GetHitTile(RaycastHit hit)

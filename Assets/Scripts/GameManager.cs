@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
+using System.Threading.Tasks;
 
 public enum RelativityState {None, CacheBaseworld, Lobby, Caching, MainMenu, WorldMap, ZoneMap, WorldDuel};
 
@@ -14,15 +15,18 @@ public class GameManager : MonoBehaviour
 
   // === Static Cache ===
   public static GameManager instance;
+  public static MatchManager matchManager;
   static RelativityState state;
   public static Transform myTrans;
   public static RelativityState State {get{return state;} set{}}
   public static Camera cam;
   public static MainUI mainUI;
   public static NetworkClient networkClient;
+  public static CameraController cameraController;
+  public static FirebasePlayerController playerController;
 
   //For World
-  public static World currentWorld;
+  public static World currentWorld; 
   public static GameObject worldManagerObj;
   public static WorldManager worldManager;
   static CreateWorldCache worldCacher;
@@ -57,6 +61,9 @@ public class GameManager : MonoBehaviour
 
         mainUI = GameObject.FindWithTag("MainUI").GetComponent<MainUI>();
         networkClient = GetComponent<NetworkClient>();
+        cameraController = GameObject.FindWithTag("CameraController").GetComponent<CameraController>();
+        playerController = GameObject.FindWithTag("Player").GetComponent<FirebasePlayerController>();
+        matchManager = GetComponent<MatchManager>();
 
         // Ideally, the only place state is manually set.
         state = beginningState;
@@ -76,9 +83,11 @@ public class GameManager : MonoBehaviour
             PerlinType.globalSeed = gameSeed;
 
             CacheOnly();
-
-            Debug.Log("baseworld.json saved to Resources and tilemap.json saved to Cache");
-            Application.Quit();
+            #if UNITY_EDITOR
+              UnityEditor.EditorApplication.isPlaying = false;
+            #else
+              Application.Quit();
+            #endif
           break;
 
           case RelativityState.WorldDuel:
@@ -125,13 +134,26 @@ public class GameManager : MonoBehaviour
       tiles.Add(new CacheTile(ht));  // copy constructor
     }
 
-    JSONSerializer.WriteTextFile(tiles, "\\Cache\\tilemap.json");
+    JSONSerializer.WriteTextFile(tiles, "\\Cache\\server_baseworld.json");
+    Debug.Log("PolySphere written to Resources\\baseworld.json and List<CacheTile> written to Cache\\server_baseworld.json");
   }
 
-  public static void InitalizeServerWorld(ServerWorld world){
+  // This is called when match listener gets a match from firestore for the first time
+  public static async void OnMatchJoin(Match match){
+    ServerWorld serverWorld = await NetworkClient.GetWorldFromServerByID(match.worldID);
+    float starttime = Time.time;
+    InitalizeServerWorld(serverWorld, (w=>{
+      mainUI.OnLeaveLobby();
+      matchManager.OnWorldLoaded(w);
+      float endtime = Time.time; 
+      Debug.Log("Generated world in "+(endtime-starttime)+" seconds.");
+    }));
+  }
+
+  public static void InitalizeServerWorld(ServerWorld world, Action<World> callback=null){
     worldManagerObj = GameObject.FindWithTag("World Manager");
     worldManager = worldManagerObj.GetComponent<WorldManager>();
-    worldManager.InitializeServerWorld(instance.blockPrefab, world);
+    worldManager.StartCoroutine(worldManager.InitializeServerWorld(instance.blockPrefab, world, callback));
   }
   void InitializeWorld(bool loading)
   {

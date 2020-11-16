@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using LibNoise.Unity.Generator;
 using System.Linq;
+using Unity.Collections; 
+
 public enum WorldSize {None, Small, Medium, Large};
 public enum WorldType {None, Verdant, Frigid, Oceanic, Barren, Volcanic, Radiant, Gaseous};
 public enum Season {None, Spring, Summer, Fall, Winter};
@@ -29,7 +31,7 @@ public class World
   public int maxObjects = 2400;
   public static int zeroState = 3;
   public static int oneState = 4;
-    [HideInInspector] public List<Biome> biomes;
+  [HideInInspector] public List<Biome> biomes;
   [HideInInspector] public List<HexTile> tiles;
   [HideInInspector] public SerializableVector3 origin;
   [HideInInspector] public int circumferenceInTiles;
@@ -46,6 +48,7 @@ public class World
   [HideInInspector] public int[] heightmap;
   [System.NonSerializedAttribute] PolySphere activeSphere;  // used for generating/caching
 
+  [System.NonSerializedAttribute] public NativePlateData[] platesData;
   private bool neighborInit;
   private List<List<HexTile>> _neighbors;
   public List<List<HexTile>> neighbors{
@@ -87,17 +90,33 @@ public class World
     origin = Vector3.zero;
   }
 
+  // Used for batching data for threading
+  public struct NativePlateData{
+    public NativeArray<float> heights;
+    public NativeArray<Vector3> centers, v1s, v2s, v3s, v4s, v5s, v6s,
+      sideNorm1, sideNorm2, sideNorm3, sideNorm4, sideNorm5, sideNorm6;
+    public NativeArray<int> types;
+    public void Dispose(){
+      heights.Dispose();
+      centers.Dispose();
+      v1s.Dispose();v2s.Dispose();v3s.Dispose();v4s.Dispose();v5s.Dispose();v6s.Dispose();
+      types.Dispose();
+      sideNorm1.Dispose();sideNorm2.Dispose();sideNorm3.Dispose();sideNorm4.Dispose();sideNorm5.Dispose();sideNorm6.Dispose();
+    }
+  }
+
   public World(PolySphere baseworld, ServerWorld serverWorld)
   {
     origin = Vector3.zero;    // Will we ever use this?
     numberOfPlates = baseworld.numberOfPlates;
     tiles = new List<HexTile>();
 
-    if (baseworld.hexTiles.Count != serverWorld.tiles.Count)
-      Debug.LogError("Count mismatch between baseworld and server world: "+baseworld.hexTiles.Count+" vs. "+serverWorld.tiles.Count);
+    if (baseworld.hexTiles.Count != serverWorld.tiles.Length)
+      Debug.LogError("Count mismatch between baseworld and server world: "+baseworld.hexTiles.Count+" vs. "+serverWorld.tiles.Length);
 
+    int maxPlateNumber = 0;
     // Hard copy tile data
-    for(int i=0; i<serverWorld.tiles.Count; i++)
+    for(int i=0; i<serverWorld.tiles.Length; i++)
     {
       HexTile ht = new HexTile();
       ht.index = i;
@@ -113,6 +132,12 @@ public class World
       h.v4 = baseworld.hexTiles[i].hexagon.v4;
       h.v5 = baseworld.hexTiles[i].hexagon.v5;
       h.v6 = baseworld.hexTiles[i].hexagon.v6;
+      h.sideNormal1 = baseworld.hexTiles[i].hexagon.sideNormal1;
+      h.sideNormal2 = baseworld.hexTiles[i].hexagon.sideNormal2;
+      h.sideNormal3 = baseworld.hexTiles[i].hexagon.sideNormal3;
+      h.sideNormal4 = baseworld.hexTiles[i].hexagon.sideNormal4;
+      h.sideNormal5 = baseworld.hexTiles[i].hexagon.sideNormal5;
+      h.sideNormal6 = baseworld.hexTiles[i].hexagon.sideNormal6;
       // @TODO: is hexagon.uv's used at all? seems like it once was but not any more
       //h.neighbors = baseworld.hexTiles[i].neighbors.ToArray<int>();   // hexagon neighbors also deprecated?
       h.isPentagon = baseworld.hexTiles[i].hexagon.isPentagon;  
@@ -123,11 +148,94 @@ public class World
       ht.neighbors = baseworld.hexTiles[i].neighbors;   // Should go either way
       ht.passable = serverWorld.tiles[i].p;
       ht.plate = baseworld.hexTiles[i].plate;
+      // counting plates
+      if (ht.plate > maxPlateNumber) maxPlateNumber = ht.plate;
       tiles.Add(ht);
     }
 
+    origin = new SerializableVector3(0,0,0);    // idk
     oceanLevel = serverWorld.oceanLevel;
     maxHeight = serverWorld.maxHeight;
+
+    // ----Build Plate Data----
+    maxPlateNumber++;   // Cause it's 0-indexed
+    // First we need temp lists
+    List<float>[] tmp_heights = new List<float>[maxPlateNumber];
+    List<Vector3>[] tmp_centers = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v1s = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v2s = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v3s = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v4s = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v5s = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] tmp_v6s = new List<Vector3>[maxPlateNumber];
+    List<int>[] tmp_types = new List<int>[maxPlateNumber];
+    List<Vector3>[] sn1 = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] sn2 = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] sn3 = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] sn4 = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] sn5 = new List<Vector3>[maxPlateNumber];
+    List<Vector3>[] sn6 = new List<Vector3>[maxPlateNumber];
+
+    for (int i=0; i<maxPlateNumber; i++){
+      tmp_heights[i] = new List<float>();
+      tmp_centers[i] = new List<Vector3>();
+      tmp_v1s[i] = new List<Vector3>();
+      tmp_v2s[i] = new List<Vector3>();
+      tmp_v3s[i] = new List<Vector3>();
+      tmp_v4s[i] = new List<Vector3>();
+      tmp_v5s[i] = new List<Vector3>();
+      tmp_v6s[i] = new List<Vector3>();
+      tmp_types[i] = new List<int>();
+      sn1[i] = new List<Vector3>();
+      sn2[i] = new List<Vector3>();
+      sn3[i] = new List<Vector3>();
+      sn4[i] = new List<Vector3>();
+      sn5[i] = new List<Vector3>();
+      sn6[i] = new List<Vector3>();
+    }
+
+    foreach (HexTile tile in tiles){
+      tmp_heights[tile.plate].Add(tile.height);
+      tmp_centers[tile.plate].Add(tile.hexagon.center);
+      tmp_v1s[tile.plate].Add(tile.hexagon.v1);
+      tmp_v2s[tile.plate].Add(tile.hexagon.v2);
+      tmp_v3s[tile.plate].Add(tile.hexagon.v3);
+      tmp_v4s[tile.plate].Add(tile.hexagon.v4);
+      tmp_v5s[tile.plate].Add(tile.hexagon.v5);
+      tmp_v6s[tile.plate].Add(tile.hexagon.v6);
+      tmp_types[tile.plate].Add((int)tile.type);
+      sn1[tile.plate].Add(tile.hexagon.sideNormal1);
+      sn2[tile.plate].Add(tile.hexagon.sideNormal2);
+      sn3[tile.plate].Add(tile.hexagon.sideNormal3);
+      sn4[tile.plate].Add(tile.hexagon.sideNormal4);
+      sn5[tile.plate].Add(tile.hexagon.sideNormal5);
+      sn6[tile.plate].Add(tile.hexagon.sideNormal6);
+    }
+
+    // Now convert the temp lists into NativeContainers
+    platesData = new NativePlateData[maxPlateNumber];
+    for (int i=0; i<maxPlateNumber; i++){
+      platesData[i] = new NativePlateData();
+      platesData[i].heights = new NativeArray<float>(tmp_heights[i].ToArray(), Allocator.TempJob);
+      platesData[i].centers = new NativeArray<Vector3>(tmp_centers[i].ToArray(), Allocator.TempJob);
+      platesData[i].v1s = new NativeArray<Vector3>(tmp_v1s[i].ToArray(), Allocator.TempJob);
+      platesData[i].v2s = new NativeArray<Vector3>(tmp_v2s[i].ToArray(), Allocator.TempJob);
+      platesData[i].v3s = new NativeArray<Vector3>(tmp_v3s[i].ToArray(), Allocator.TempJob);
+      platesData[i].v4s = new NativeArray<Vector3>(tmp_v4s[i].ToArray(), Allocator.TempJob);
+      platesData[i].v5s = new NativeArray<Vector3>(tmp_v5s[i].ToArray(), Allocator.TempJob);
+      platesData[i].v6s = new NativeArray<Vector3>(tmp_v6s[i].ToArray(), Allocator.TempJob);
+      platesData[i].types = new NativeArray<int>(tmp_types[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm1 = new NativeArray<Vector3>(sn1[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm2 = new NativeArray<Vector3>(sn2[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm3 = new NativeArray<Vector3>(sn3[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm4 = new NativeArray<Vector3>(sn4[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm5 = new NativeArray<Vector3>(sn5[i].ToArray(), Allocator.TempJob);
+      platesData[i].sideNorm6 = new NativeArray<Vector3>(sn6[i].ToArray(), Allocator.TempJob);
+    }
+  }
+  
+  public Vector3 GetPositionOfTile(int index){
+    return tiles[index].hexagon.center;
   }
 
   // deprecated
