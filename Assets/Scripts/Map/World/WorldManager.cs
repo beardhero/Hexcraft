@@ -95,7 +95,7 @@ public class WorldManager : MonoBehaviour
   void Start(){
     instance = this;
   }
-  public IEnumerator InitializeServerWorld(GameObject blockPrefab, ServerWorld serverWorld, Action<World> callback=null)
+  public void InitializeServerWorld(GameObject blockPrefab, ServerWorld serverWorld, Action<World> callback=null)
   {
     currentWorldObject = new GameObject("World");
     currentWorldTrans = currentWorldObject.transform;
@@ -106,23 +106,20 @@ public class WorldManager : MonoBehaviour
 
     //render plates
     worldRenderer = GetComponent<WorldRenderer>();
-    CoroutineWithData cd = new CoroutineWithData(this, worldRenderer.ThreadedHexPlates(activeWorld, regularTileSet));
-    yield return cd.coroutine;
-    List<GameObject> plates = (List<GameObject>)cd.result;
+    StartCoroutine(worldRenderer.ThreadedHexPlates(activeWorld, regularTileSet, (plates)=>{
+      foreach (GameObject g in plates)
+      {
+        g.transform.parent = currentWorldTrans;
+      }
 
-    foreach (GameObject g in plates)
-    {
-      g.transform.parent = currentWorldTrans;
-    }
-
-    // Place ocean (if light world)
-    GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
-    ocean.transform.parent = currentWorldTrans;
-    ocean.transform.SetAsFirstSibling();
-    float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
-    ocean.transform.localScale = new Vector3(scale, scale, scale);
-
-    callback(activeWorld);
+      // Place ocean (if light world)
+      GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+      ocean.transform.parent = currentWorldTrans;
+      ocean.transform.SetAsFirstSibling();
+      float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
+      ocean.transform.localScale = new Vector3(scale, scale, scale);
+      callback(activeWorld);
+    }));
   }
 
   // deprecated

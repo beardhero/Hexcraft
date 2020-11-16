@@ -153,7 +153,7 @@ public class GameManager : MonoBehaviour
   public static void InitalizeServerWorld(ServerWorld world, Action<World> callback=null){
     worldManagerObj = GameObject.FindWithTag("World Manager");
     worldManager = worldManagerObj.GetComponent<WorldManager>();
-    worldManager.StartCoroutine(worldManager.InitializeServerWorld(instance.blockPrefab, world, callback));
+    worldManager.InitializeServerWorld(instance.blockPrefab, world, callback);
   }
   void InitializeWorld(bool loading)
   {

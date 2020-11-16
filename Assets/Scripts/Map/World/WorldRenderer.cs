@@ -6,6 +6,8 @@ using UnityEngine.Jobs;
 using Unity.Burst;
 using Unity.Collections;
 using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 public class WorldRenderer : MonoBehaviour
 {
@@ -27,7 +29,7 @@ public class WorldRenderer : MonoBehaviour
  
 
 // ========= Threaded gen ==============
-  public IEnumerator<List<GameObject>> ThreadedHexPlates(World world, TileSet tileSet){
+  public IEnumerator ThreadedHexPlates(World world, TileSet tileSet, Action<List<GameObject>> callback){
     List<GameObject> output = new List<GameObject>();
 
     Vector3 origin = Vector3.zero;
@@ -47,17 +49,12 @@ public class WorldRenderer : MonoBehaviour
     uvs[7] = new Vector2 (13*uvTileWidth, 1*uvTileHeight);  // "Dark tex" @TODO: proper side texturing
     NativeArray<Vector2> uvOs = new NativeArray<Vector2>(uvs, Allocator.TempJob);
     int[] atlasCoords = WorldManager.instance.regularTileSet.GetUVsFlattened();
-
-    bool[] completeness = new bool[world.numberOfPlates];
+ 
     List<JobHandle> plateJobHandles = new List<JobHandle>();
     List<PlateRenderJob> plateJobs = new List<PlateRenderJob>();
 
     for (int i = 0; i < world.numberOfPlates; i++)
     {
-      //NativeList<Vector3> v = new NativeList<Vector3>(Allocator.TempJob);
-      //NativeList<Vector3> n = new NativeList<Vector3>(Allocator.TempJob);
-      //NativeList<Vector2> u = new NativeList<Vector2>(Allocator.TempJob);
-      //NativeList<int> t = new NativeList<int>(Allocator.TempJob);
       int count = world.platesData[i].types.Length;
       int typeCount = System.Enum.GetNames(typeof(TileType)).Length;
       NativeArray<int> flatUvCoords = new NativeArray<int>(count*2, Allocator.TempJob);
@@ -73,7 +70,7 @@ public class WorldRenderer : MonoBehaviour
         uvWidth = uvTileWidth,
         uvHeight = uvTileHeight,
         nativeData = world.platesData[i],
-        uvOffsets = uvOs,
+        uvOffsets = uvOs,   // This array persists between all jobs and is disposed at the end
         uvCoords = flatUvCoords,
         vertices = new NativeList<Vector3>(Allocator.TempJob),
         normals = new NativeList<Vector3>(Allocator.TempJob),
@@ -84,15 +81,18 @@ public class WorldRenderer : MonoBehaviour
       plateJobHandles.Add(job.Schedule());
     }
 
+    // Jobs now scheduled, wait a frame and go
+    bool[] completeness = new bool[plateJobs.Count];
     // Jobs not complete
-    if (!completeness.All(x => x)){
+    while(!completeness.All(x => x)){
+
       yield return null;    // Give at least one full frame before starting to check
 
-      for (int i=0; i<world.numberOfPlates; i++){
+      for (int i=0; i<plateJobs.Count; i++){
         if (completeness[i])  continue;   // Already finished this one
         if (plateJobHandles[i].IsCompleted){
-          plateJobHandles[i].Complete();
           completeness[i] = true;
+          plateJobHandles[i].Complete();
 
           GameObject plate = GameObject.Instantiate(worldPrefab, origin, Quaternion.identity);
           Mesh m = new Mesh();
@@ -109,10 +109,9 @@ public class WorldRenderer : MonoBehaviour
         }
       }
     }
-    // Jobs complete
-    else{
-      yield return output;
-    }
+
+    uvOs.Dispose();   // only larger-scope native array
+    callback(output);
   }
 
   private struct PlateRenderJob : IJob
@@ -127,7 +126,7 @@ public class WorldRenderer : MonoBehaviour
     public void Execute ()
     {
       // Huge assumption here that all the arrays have the same length
-      int count = nativeData.heights.Length;
+      int count = nativeData.heights.Length;  
 
       // Add the origin point
       vertices.Add(Vector3.zero);
@@ -256,7 +255,7 @@ public class WorldRenderer : MonoBehaviour
     }
     public void Dispose(){
       nativeData.Dispose();
-      uvOffsets.Dispose();
+      //uvOffsets.Dispose();    // Save offsets they are used by each job in batch
       uvCoords.Dispose();
       vertices.Dispose();
       normals.Dispose();

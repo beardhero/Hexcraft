@@ -41,6 +41,7 @@ public class CoroutineWithData {
      public Coroutine coroutine { get; private set; }
      public object result;
      private IEnumerator target;
+     public bool done;
      public CoroutineWithData(MonoBehaviour owner, IEnumerator target) {
          this.target = target;
          this.coroutine = owner.StartCoroutine(Run());
@@ -51,6 +52,7 @@ public class CoroutineWithData {
              result = target.Current;
              yield return result;
          }
+         done = true;
      }
  }
 
