@@ -237,8 +237,9 @@ public class MainUI : MonoBehaviour
       g.transform.Find("Players").GetComponent<Text>().text = matches[i].players.Length+"/6";
       Match m = matches[i];  // This must be accessed and evaluated now, not in the lambda exp.
       g.transform.Find("Join Button").GetComponent<Button>().onClick.AddListener( ()=>{
-        network.OnJoinMatch(in m);
-        // @TODO: deselect, close menu
+        if (NetworkClient.IsLoggedIn){
+          network.OnJoinMatch(in m); 
+        }
       });
     }
     lockRefresh = false;

@@ -102,24 +102,34 @@ public class WorldManager : MonoBehaviour
     
     // Load the baseworld and apply servertiles data to it
     PolySphere baseWorld = JsonConvert.DeserializeObject<PolySphere>(Resources.Load<TextAsset>("baseworld").text);
-    activeWorld = new World(baseWorld, serverWorld);
-
+  
     //render plates
     worldRenderer = GetComponent<WorldRenderer>();
-    StartCoroutine(worldRenderer.ThreadedHexPlates(activeWorld, regularTileSet, (plates)=>{
-      foreach (GameObject g in plates)
-      {
-        g.transform.parent = currentWorldTrans;
-      }
 
-      // Place ocean (if light world)
-      GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
-      ocean.transform.parent = currentWorldTrans;
-      ocean.transform.SetAsFirstSibling();
-      float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
-      ocean.transform.localScale = new Vector3(scale, scale, scale);
-      callback(activeWorld);
-    }));
+    //activeWorld = new World(baseWorld, serverWorld, true);   // last param is for threaded world rendering
+    // Don't use this threaded approach for now
+    // StartCoroutine(worldRenderer.ThreadedHexPlates(activeWorld, regularTileSet, (plates)=>{
+    //   foreach (GameObject g in plates)
+    //   {
+    //     g.transform.parent = currentWorldTrans;
+    //   }
+
+    //   // Place ocean (if light world)
+    //   GameObject ocean = Instantiate(oceanPrefab, activeWorld.origin.ToVector3(), Quaternion.identity);
+    //   ocean.transform.parent = currentWorldTrans;
+    //   ocean.transform.SetAsFirstSibling();
+    //   float scale = (activeWorld.oceanLevel*3.83f) + 61;    // 60 is the base scale of the baseworld, 3.75 is 60/16, the estimated radius of the baseworld in tiles
+    //   ocean.transform.localScale = new Vector3(scale, scale, scale);
+    //   callback(activeWorld);
+    // }));
+
+    // deprecated - old synchronous approach
+    activeWorld = new World(baseWorld, serverWorld, false);   // last param is for threaded world rendering
+    for (int i=0; i<activeWorld.numberOfPlates; i++){
+      GameObject g = worldRenderer.HexPlate(activeWorld, regularTileSet, i);
+      g.transform.parent = currentWorldTrans;
+    } 
+    
   }
 
   // deprecated

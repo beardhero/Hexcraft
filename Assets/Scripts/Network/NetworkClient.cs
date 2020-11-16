@@ -66,21 +66,24 @@ public class NetworkClient : MonoBehaviour
         // Listen to changes in this match
         matchListeners.Add(db.Collection("matches").Document(match.id).Listen( snap => matchManager.OnMatchUpdated(snap) ));
         
-        // Get initial Units collection
-        CollectionReference unitsCol = db.Collection("matches").Document(match.id).Collection("units");
-        // QuerySnapshot unitsSnap = await unitsCol.GetSnapshotAsync();
-        // matchManager.OnUnitsUpdated(unitsSnap); 
-
         // Listen to changes in the Units collection in this match
-        matchListeners.Add(unitsCol.Listen(snap=>matchManager.OnUnitsUpdated(snap)));
-
+        matchListeners.Add(db.Collection("matches").Document(match.id).Collection("units").Listen(snap=>matchManager.OnUnitsUpdated(snap) ));
+ 
         GameManager.OnMatchJoin(match);
     }
 
-    public void OnLeaveMatch()
-    {
-        foreach (ListenerRegistration l in matchListeners)
+    public void OnLeaveMatch() {UnsubscribeListeners();}
+    private void OnApplicationQuit() {
+        UnsubscribeListeners();
+        firebaseApp.Dispose();
+    }
+    void UnsubscribeListeners(){
+        if (matchListeners == null) return;
+
+        foreach (ListenerRegistration l in matchListeners){
+            Debug.Log("stopping listener "+l.ToString());
             l.Stop();
+        } 
     }
 
     public async void StartNewMatch(string matchName)

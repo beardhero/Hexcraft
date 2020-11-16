@@ -105,7 +105,7 @@ public class World
     }
   }
 
-  public World(PolySphere baseworld, ServerWorld serverWorld)
+  public World(PolySphere baseworld, ServerWorld serverWorld, bool buildPateData = false)
   {
     origin = Vector3.zero;    // Will we ever use this?
     numberOfPlates = baseworld.numberOfPlates;
@@ -156,6 +156,10 @@ public class World
     origin = new SerializableVector3(0,0,0);    // idk
     oceanLevel = serverWorld.oceanLevel;
     maxHeight = serverWorld.maxHeight;
+
+    if (!buildPateData){
+      return;
+    }
 
     // ----Build Plate Data----
     maxPlateNumber++;   // Cause it's 0-indexed
